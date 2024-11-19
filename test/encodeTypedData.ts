@@ -1,0 +1,3 @@
+describe("encodeType", () => {});
+
+describe("encodeTypedData", () => {});

@@ -1,0 +1,1 @@
+export { encodeTypedData } from "./encodeTypedData";
