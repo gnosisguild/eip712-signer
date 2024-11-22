@@ -64,9 +64,9 @@ contract Eip712Signer {
         if (typedValue.dataType == DataType.Atomic) {
             return bytes32(typedValue.value);
         } else if (typedValue.dataType == DataType.Dynamic) {
-            return keccak256(typedValue.value);
+            return keccak256(abi.decode(typedValue.value, (bytes)));
         } else if (typedValue.dataType == DataType.Array) {
-            return _encodeTuple(abi.decode(typedValue.value, (TypedValue[])));
+            return keccak256(_encodeTuple(abi.decode(typedValue.value, (TypedValue[]))));
         } else if (typedValue.dataType == DataType.Struct) {
             return (
                 keccak256(
@@ -83,15 +83,13 @@ contract Eip712Signer {
         }
     }
 
-    function _encodeTuple(TypedValue[] memory values) internal returns (bytes32) {
-        bytes memory acc;
+    function _encodeTuple(TypedValue[] memory values) internal returns (bytes memory acc) {
         for (uint256 i; i < values.length; ) {
             acc = bytes.concat(acc, _encodeData(values[i]));
             unchecked {
                 ++i;
             }
         }
-        return keccak256(acc);
     }
 
     /**

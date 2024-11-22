@@ -54,7 +54,7 @@ const encodeTypedValue = <T extends TypedData>({
     }
     const structFields = types[type];
     return {
-      dataType: DataType.Array,
+      dataType: DataType.Struct,
       value: encodeAbiParameters(
         [TYPED_VALUE_TUPLE_ARRAY],
         [
@@ -63,7 +63,7 @@ const encodeTypedValue = <T extends TypedData>({
           ),
         ],
       ),
-      structSignature: "",
+      structSignature: encodeType({ types, primaryType: type }),
     };
   }
 
