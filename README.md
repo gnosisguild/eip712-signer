@@ -11,6 +11,14 @@
 
 An adapter contract to plug in front of the Safe SignMessageLib, producing EIP-712 signatures for Snapshot votes
 
+## Todo
+
+The integrity checks implemented in the Roles Modifier contract require all branches of logical expressions to have
+identical type trees. Due to this limitation any role can only scope EIP-712 messages of a single structure.
+
+A potential workaround for this could be adding a `fallback()` function to the `Eip712Signer` contract so we can use a
+dedicated selector for signing each message type.
+
 ## Audits
 
 ⚠️ This project is unaudited.

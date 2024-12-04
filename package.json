@@ -79,6 +79,7 @@
     "build": "tsup --format esm,cjs"
   },
   "dependencies": {
-    "viem": "^2.21.47"
+    "viem": "^2.21.47",
+    "zodiac-roles-sdk": "^2.15.0"
   }
 }
