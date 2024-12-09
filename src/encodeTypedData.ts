@@ -15,11 +15,16 @@ import { encodeType, isAtomic } from "./utils";
 
 const TYPED_VALUE_TUPLE_ARRAY_PARSED = parseAbiParameters(TYPED_VALUE_TUPLE_ARRAY)[0];
 
+// when EIP712Domain is in the types, viem will infer the domain.chainId field as bigint, while its TypedDataDomain also allows numbers
+type FixDomainChainIdType<T> = T extends { domain?: { chainId?: bigint } }
+  ? Omit<T, "domain"> & { domain?: Omit<T["domain"], "chainId"> & { chainId?: number | bigint | undefined } }
+  : T;
+
 export const encodeTypedData = <
   const typedData extends TypedData | { [key: string]: unknown },
   primaryType extends string,
 >(
-  parameters: TypedDataDefinition<typedData, primaryType>,
+  parameters: FixDomainChainIdType<TypedDataDefinition<typedData, primaryType>>,
 ) => {
   const { domain, message, primaryType } = parameters as unknown as SignTypedDataParameters;
   const types = {

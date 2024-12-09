@@ -1,8 +1,7 @@
 import type { TypedDataToPrimitiveTypes } from "abitype";
 import { ParamType } from "ethers";
 import { Prettify, TypedData, TypedDataDomain } from "viem";
-import { FunctionPermissionCoerced, c } from "zodiac-roles-sdk";
-import { Scoping } from "zodiac-roles-sdk/build/cjs/sdk/src/permissions/authoring/conditions/types";
+import { FunctionPermissionCoerced, Scoping, c } from "zodiac-roles-sdk";
 
 import { EIP_712_SIGNER_ADDRESS, SIGN_FUNCTION_SELECTOR, TYPED_VALUE_TUPLE } from "./const";
 import { scopeTypedData } from "./scopeTypedData";
@@ -21,7 +20,7 @@ type AllowEip712SignatureParameters<
   primaryType:
     | primaryTypes // show all values
     | (primaryType extends primaryTypes ? primaryType : never); // infer value
-  domain?: Scoping<(schema extends { EIP712Domain: infer domain } ? domain : Prettify<TypedDataDomain>) | undefined>;
+  domain?: Scoping<schema extends { EIP712Domain: infer domain } ? domain : Prettify<TypedDataDomain>>;
   message?: Scoping<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     { [_: string]: any } extends message // Check if message was inferred
