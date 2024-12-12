@@ -1,17 +1,17 @@
 import { expect } from "chai";
 import { SignTypedDataParameters } from "viem";
 
-import { encodeType } from "../src/utils";
+import { encodeStructType } from "../src/utils";
 
 describe("encodeType", () => {
   it("correctly encodes simple struct types", () => {
-    expect(encodeType({ types: sampleMessage.types, primaryType: "Person" })).to.equal(
+    expect(encodeStructType({ types: sampleMessage.types, primaryType: "Person" })).to.equal(
       "Person(string name,address wallet)",
     );
   });
 
   it("correctly encodes nested struct types", () => {
-    expect(encodeType({ types: sampleMessage.types, primaryType: "Mail" })).to.equal(
+    expect(encodeStructType({ types: sampleMessage.types, primaryType: "Mail" })).to.equal(
       "Mail(Person from,Person[] to,string contents)Person(string name,address wallet)",
     );
   });

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-contract Eip712Signer {
+// first 4 bytes of top-level struct signature hash are treated as function selector
+contract Eip712SignerV2 {
     address public immutable deployedAt;
     address public immutable signMessageLib;
 
@@ -35,30 +36,13 @@ contract Eip712Signer {
     }
 
     /**
-     * We make the signTypedMessage function available under any selector. This allows scoping different type trees under different
-     * signTypedMessage aliases, working around the overly strict integrity checks of the Roles mod.
-     */
-    fallback() external {
-        (bytes memory domain, bytes memory message, Type[] memory types, uint256 primaryType) = abi.decode(
-            msg.data[4:],
-            (bytes, bytes, Type[], uint256)
-        );
-        signTypedMessage(domain, message, types, primaryType);
-    }
-
-    /**
      * @notice Marks an EIP-712 typed message as signed.
      * @param domain The domain of EIP-712 message, ABI encoded according to the first `types` element.
      * @param message The EIP-712 message, ABI encoded according to the `types` element at index `primaryType`.
      * @param types An array of types used in the EIP-712 message. Struct types must be ordered alphabetically by name.
      * @param primaryType Specifies the index of the EIP-712 primary type in the `types` array.
      */
-    function signTypedMessage(
-        bytes memory domain,
-        bytes memory message,
-        Type[] memory types,
-        uint256 primaryType
-    ) public {
+    fallback(bytes calldata domain, bytes calldata message, Type[] calldata types, uint256 primaryType) external {
         // Make sure we're being delegatecalled
         if (address(this) == deployedAt) {
             revert InvalidCall();
@@ -81,16 +65,22 @@ contract Eip712Signer {
         }
     }
 
-    function _encodeData(bytes memory value, Type[] memory types, uint256 current) internal returns (bytes32) {
-        Type memory _type = types[current];
+    function _encodeData(bytes calldata value, Type[] calldata types, uint256 current) internal returns (bytes32) {
+        Type calldata _type = types[current];
         if (_type.key == TypeKey.Atomic) {
             return bytes32(value);
         } else if (_type.key == TypeKey.Dynamic) {
+            // TODO instead of abi.decode we need to work with calldata ranges akin to how the Roles Decoder lib works
             return keccak256(abi.decode(value, (bytes)));
         } else if (_type.key == TypeKey.Array) {
-            return keccak256(_encodeArray(abi.decode(value, (bytes[])), types, current));
+            return keccak256(_encodeTuple(abi.decode(value, (bytes[]))));
         } else if (_type.key == TypeKey.Struct) {
-            return (keccak256(_encodeStruct(abi.decode(value, (bytes[])), types, current)));
+            return (
+                keccak256(
+                    // TODO instead of abi.decode we need to work with calldata ranges akin to how the Roles Decoder lib works
+                    bytes.concat(keccak256(bytes(_type.structSignature)), _encodeTuple(abi.decode(value, (bytes[]))))
+                )
+            );
         } else if (_type.key == TypeKey.Hash) {
             return bytes32(value);
         } else {
@@ -98,35 +88,13 @@ contract Eip712Signer {
         }
     }
 
-    function _encodeArray(
-        bytes[] memory values,
-        Type[] memory types,
-        uint256 current
-    ) internal returns (bytes memory acc) {
-        uint256 elementTypeIndex = types[current].elements[0];
+    function _encodeTuple(bytes[] calldata values) internal returns (bytes memory acc) {
         for (uint256 i; i < values.length; ) {
-            acc = bytes.concat(acc, _encodeData(values[i], types, elementTypeIndex));
+            acc = bytes.concat(acc, _encodeData(values[i]));
             unchecked {
                 ++i;
             }
         }
-    }
-
-    function _encodeStruct(
-        bytes[] memory values,
-        Type[] memory types,
-        uint256 current
-    ) internal returns (bytes memory) {
-        bytes memory acc;
-        for (uint256 i; i < values.length; ) {
-            uint256 elementTypeIndex = types[current].elements[i];
-            acc = bytes.concat(acc, _encodeData(values[i], types, elementTypeIndex));
-            unchecked {
-                ++i;
-            }
-        }
-
-        return bytes.concat(keccak256(bytes(types[current].structSignature)), acc);
     }
 
     /**

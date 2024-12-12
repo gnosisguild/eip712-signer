@@ -1,6 +1,4 @@
-import { Hex } from "viem";
-
-export enum DataType {
+export enum TypeKey {
   Atomic,
   Dynamic,
   Array,
@@ -8,14 +6,19 @@ export enum DataType {
   Hash,
 }
 
-export type TypedValue =
+export type Type =
   | {
-      dataType: Exclude<DataType, DataType.Struct>;
-      value: Hex;
+      key: Exclude<TypeKey, TypeKey.Struct | TypeKey.Array>;
       structSignature: "";
+      elements: [];
     }
   | {
-      dataType: DataType.Struct;
-      value: Hex;
+      key: TypeKey.Array;
+      structSignature: "";
+      elements: [bigint];
+    }
+  | {
+      key: TypeKey.Struct;
       structSignature: string;
+      elements: bigint[];
     };

@@ -13,7 +13,13 @@ export const isAtomic = (abiParameterType: string): boolean => {
  * Returns a sorted array of serialized struct types. The values should be concatenated to form the final encoded type.
  * see: https://eips.ethereum.org/EIPS/eip-712#definition-of-encodetype
  **/
-export const encodeType = <T extends TypedData>({ types, primaryType }: { types: T; primaryType: keyof T }): string => {
+export const encodeStructType = <T extends TypedData>({
+  types,
+  primaryType,
+}: {
+  types: T;
+  primaryType: keyof T;
+}): string => {
   if (typeof primaryType !== "string") {
     throw new Error(`Unexpected primary type: ${String(primaryType)}`);
   }
@@ -26,6 +32,29 @@ export const encodeType = <T extends TypedData>({ types, primaryType }: { types:
     type + "(" + types[type].map(({ name, type }) => `${type} ${name}`).join(",") + ")";
 
   return [primaryType, ...referencedStructs].map(serializeType).join("");
+};
+
+/**
+ * Returns the ABI type of a typed data struct type.
+ */
+export const asAbiType = <T extends TypedData>({ types, primaryType }: { types: T; primaryType: keyof T }): string => {
+  if (typeof primaryType !== "string") {
+    throw new Error(`Unexpected primary type: ${String(primaryType)}`);
+  }
+
+  const isArray = primaryType.includes("[");
+  const elementType = isArray ? primaryType.split("[")[0] : primaryType;
+  const isStruct = elementType in types;
+
+  if (!isStruct) {
+    // basic types are already specified in ABI format
+    return primaryType;
+  } else {
+    // struct field types must be encoded as inlined ABI tuples
+    const parameters = types[primaryType];
+    const abiParameters = parameters.map(({ name, type }) => asAbiType({ types, primaryType: type }) + " " + name);
+    return "(" + abiParameters.join(", ") + ")";
+  }
 };
 
 const collectReferencedStructs = <T extends TypedData>(

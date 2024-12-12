@@ -4,7 +4,7 @@ import { Condition, Operator, ParameterType, c } from "zodiac-roles-sdk";
 
 import { TYPED_VALUE_TUPLE, TYPED_VALUE_TUPLE_ARRAY } from "./const";
 import { DataType } from "./types";
-import { encodeType, isAtomic } from "./utils";
+import { encodeStructType, isAtomic } from "./utils";
 
 /** Maps over a condition structure formulated to scope the typed data object, turning it into a condition structure scoping the corresponding TypedValue encoding */
 export const scopeTypedData = ({
@@ -73,7 +73,7 @@ export const scopeTypedData = ({
         ],
         [TYPED_VALUE_TUPLE_ARRAY],
       ),
-      structSignature: scopeSignature ? encodeType({ types, primaryType: type }) : undefined,
+      structSignature: scopeSignature ? encodeStructType({ types, primaryType: type }) : undefined,
     })(ParamType.from(TYPED_VALUE_TUPLE));
   }
 

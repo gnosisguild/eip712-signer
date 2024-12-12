@@ -51,12 +51,10 @@ describe("Eip712Signer", () => {
       primaryType: "Vote",
     } as const;
 
-    const { domain, message } = encodeTypedData(typedData);
-
-    const signVoteTxData = Eip712Signer__factory.createInterface().encodeFunctionData("signTypedMessage", [
-      domain,
-      message,
-    ]);
+    const signVoteTxData = Eip712Signer__factory.createInterface().encodeFunctionData(
+      "signTypedMessage",
+      encodeTypedData(typedData),
+    );
 
     it("reverts if not called via delegatecall", async () => {
       const { safe, Eip712Signer } = await loadFixture(deployEip712SignerFixture);

@@ -5,6 +5,7 @@ import { FunctionPermissionCoerced, Scoping, c } from "zodiac-roles-sdk";
 
 import { EIP_712_SIGNER_ADDRESS, SIGN_FUNCTION_SELECTOR, TYPED_VALUE_TUPLE } from "./const";
 import { scopeTypedData } from "./scopeTypedData";
+import { asAbiType } from "./utils";
 
 type AllowEip712SignatureParameters<
   typedData extends TypedData | Record<string, unknown> = TypedData,
@@ -29,10 +30,7 @@ type AllowEip712SignatureParameters<
   >;
 };
 
-export const allowEip712Signature = <
-  const typedData extends TypedData | { [key: string]: unknown },
-  primaryType extends string,
->({
+export const allowEip712Signature = <const typedData extends TypedData, primaryType extends string>({
   domain,
   message,
   types,
@@ -46,17 +44,26 @@ export const allowEip712Signature = <
     throw new Error("primaryType must be a string");
   }
 
+  console.log(
+    domain &&
+      JSON.stringify(
+        c.matches(domain)(ParamType.from(asAbiType({ types, primaryType: "EIP712Domain" }))),
+        undefined,
+        2,
+      ),
+  );
+
   const domainCondition =
     domain &&
     scopeTypedData({
-      condition: c.matches(domain)(ParamType.from(TYPED_VALUE_TUPLE)),
+      condition: c.matches(domain)(ParamType.from(asAbiType({ types, primaryType: "EIP712Domain" }))),
       types: types as TypedData,
       type: "EIP712Domain",
     });
   const messageCondition =
     message &&
     scopeTypedData({
-      condition: c.matches(message)(ParamType.from(TYPED_VALUE_TUPLE)),
+      condition: c.matches(message)(ParamType.from(asAbiType({ types, primaryType }))),
       types: types as TypedData,
       type: primaryType,
     });
