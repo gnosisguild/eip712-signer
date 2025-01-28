@@ -3,9 +3,10 @@ import { ParamType } from "ethers";
 import { Prettify, TypedData, TypedDataDomain } from "viem";
 import { FunctionPermissionCoerced, Scoping, c } from "zodiac-roles-sdk";
 
-import { EIP_712_SIGNER_ADDRESS, SIGN_FUNCTION_SELECTOR, TYPED_VALUE_TUPLE } from "./const";
+import { EIP_712_SIGNER_ADDRESS } from "./const";
 import { scopeTypedData } from "./scopeTypedData";
 import { asAbiType } from "./utils";
+import { encodeTypes } from "./encodeTypedData";
 
 type AllowEip712SignatureParameters<
   typedData extends TypedData | Record<string, unknown> = TypedData,
@@ -68,10 +69,14 @@ export const allowEip712Signature = <const typedData extends TypedData, primaryT
       type: primaryType,
     });
 
+
+
+    encodeTypes({ types, primaryType }),
+
   return {
     targetAddress: EIP_712_SIGNER_ADDRESS.toLowerCase() as `0x${string}`,
     selector: SIGN_FUNCTION_SELECTOR,
     delegatecall: true,
-    condition: c.calldataMatches([domainCondition, messageCondition], [TYPED_VALUE_TUPLE, TYPED_VALUE_TUPLE])(),
+    condition: c.calldataMatches([domainCondition, messageCondition, 1n], [TYPED_VALUE_TUPLE, TYPED_VALUE_TUPLE])(),
   };
 };

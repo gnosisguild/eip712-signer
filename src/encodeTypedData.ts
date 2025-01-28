@@ -95,7 +95,7 @@ const encodeTypedValue = <T extends TypedData>({
   return encodeAbiParameters([abiParam], [value]);
 };
 
-const encodeTypes = ({ types, primaryType }: { types: TypedData; primaryType: string }): Type[] => {
+export const encodeTypes = ({ types, primaryType }: { types: TypedData; primaryType: string }): Type[] => {
   const { EIP712Domain: _0, [primaryType]: _1, ...rest } = types;
 
   const orderedTypeKeys = ["EIP712Domain", primaryType, ...Object.keys(rest)];

@@ -2,11 +2,11 @@ import { ParamType } from "ethers";
 import { TypedData } from "viem";
 import { Condition, Operator, ParameterType, c } from "zodiac-roles-sdk";
 
-import { TYPED_VALUE_TUPLE, TYPED_VALUE_TUPLE_ARRAY } from "./const";
-import { DataType } from "./types";
-import { encodeStructType, isAtomic } from "./utils";
-
-/** Maps over a condition structure formulated to scope the typed data object, turning it into a condition structure scoping the corresponding TypedValue encoding */
+/**
+ * Maps over a condition structure formulated to scope the typed data object,
+ * turning it into a condition structure scoping the recursively ABI encoded value as sent to the contract.
+ * Once the contract can decode directly from calldata, we should be able to send the original conditions structure so this function will be obsolete.
+ **/
 export const scopeTypedData = ({
   condition,
   types,
@@ -42,12 +42,15 @@ export const scopeTypedData = ({
     }
 
     const elementType = type.split("[")[0];
-    return {
-      ...condition,
-      children: condition.children?.map((child) =>
-        scopeTypedData({ condition: child, types, type: elementType, scopeSignature }),
-      ),
-    };
+    return c.abiEncodedMatches(
+      [
+        {
+          ...condition,
+          children: condition.children?.map((child) => scopeTypedData({ condition: child, types, type: elementType })),
+        },
+      ],
+      ["bytes[]"],
+    )(ParamType.from("bytes"));
   }
 
   // struct
@@ -61,25 +64,18 @@ export const scopeTypedData = ({
     }
 
     const structFields = types[type];
-    return c.matches({
-      dataType: DataType.Struct,
-      value: c.abiEncodedMatches(
-        [
-          structFields.map(({ type }, index) =>
-            condition.children && !!condition.children[index]
-              ? scopeTypedData({ condition: condition.children[index], types, type })
-              : undefined,
-          ),
-        ],
-        [TYPED_VALUE_TUPLE_ARRAY],
-      ),
-      structSignature: scopeSignature ? encodeStructType({ types, primaryType: type }) : undefined,
-    })(ParamType.from(TYPED_VALUE_TUPLE));
+    return c.abiEncodedMatches(
+      [
+        structFields.map(({ type }, index) =>
+          condition.children && !!condition.children[index]
+            ? scopeTypedData({ condition: condition.children[index], types, type })
+            : undefined,
+        ),
+      ],
+      ["bytes[]"],
+    )(ParamType.from("bytes"));
   }
 
   // basic types
-  return c.matches({
-    dataType: isAtomic(type) ? DataType.Atomic : DataType.Dynamic,
-    value: c.abiEncodedMatches([condition], [type]),
-  })(ParamType.from(TYPED_VALUE_TUPLE));
+  return c.abiEncodedMatches([condition], [type])(ParamType.from("bytes"));
 };
