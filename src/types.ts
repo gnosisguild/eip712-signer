@@ -9,16 +9,19 @@ export enum TypeKey {
 export type Type =
   | {
       key: Exclude<TypeKey, TypeKey.Struct | TypeKey.Array>;
-      structSignature: "";
+      signature: "";
+      hash: `0x${string}`;
       elements: [];
     }
   | {
       key: TypeKey.Array;
-      structSignature: "";
+      signature: "";
+      hash: `0x${string}`;
       elements: [bigint];
     }
   | {
       key: TypeKey.Struct;
-      structSignature: string;
+      signature: string;
+      hash: `0x${string}`;
       elements: bigint[];
     };

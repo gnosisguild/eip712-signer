@@ -1,73 +1,72 @@
 import {
-  SignTypedDataParameters,
-  TypedData,
-  TypedDataDefinition,
-  encodeAbiParameters,
-  getTypesForEIP712Domain,
-  parseAbiParameters,
-  validateTypedData,
-} from "viem";
+  TypedDataDomain,
+  TypedDataField,
+  ZeroHash,
+  keccak256,
+  toUtf8Bytes,
+} from "ethers";
+import { encodeAbiParameters, parseAbiParameters } from "viem";
 
 import { Type, TypeKey } from "./types";
 import { encodeStructType, isAtomic } from "./utils";
 
-// when EIP712Domain is in the types, viem will infer the domain.chainId field as bigint, while its TypedDataDomain also allows numbers
-type FixDomainChainIdType<T> = T extends { domain?: { chainId?: bigint } }
-  ? Omit<T, "domain"> & {
-      domain?: Omit<T["domain"], "chainId"> & {
-        chainId?: number | bigint | undefined;
-      };
-    }
-  : T;
+export type TypedDataTypes = Record<string, Array<TypedDataField>>;
+export type TypedDataValue = Record<string, any>;
 
-export const encodeTypedData = <
-  const typedData extends TypedData | { [key: string]: unknown },
-  primaryType extends string,
->(
-  parameters: FixDomainChainIdType<TypedDataDefinition<typedData, primaryType>>,
-) => {
-  const { domain, message, primaryType } =
-    parameters as unknown as SignTypedDataParameters;
-  const types = {
-    EIP712Domain: getTypesForEIP712Domain({ domain }),
-    ...parameters.types,
-  } as TypedData;
+export const encodeTypedData = (
+  domain: TypedDataDomain,
+  types: TypedDataTypes,
+  message: TypedDataValue,
+  primaryType: string,
+): [`0x${string}`, Type[], `0x${string}`] => {
+  // TODO validate
+  // TODO infer field
+  // validateTypedData({ domain, message, primaryType, types });
 
-  validateTypedData({ domain, message, primaryType, types });
+  types = { EIP712Domain: domainTypes(domain), ...types };
 
   return [
     encodeTypedValue(types, domain, "EIP712Domain"),
+    encodeTypes({
+      types,
+      primaryType,
+    }),
     encodeTypedValue(types, message, primaryType),
-    encodeTypes({ types, primaryType }),
-    1,
   ];
 };
 
 export function encodeTypedValue(
-  types: TypedData,
-  value: any,
+  types: TypedDataTypes,
+  value: TypedDataValue,
   entryType: string,
 ) {
   const abiParams = parseAbiParameters(getAbiTypes(types, entryType));
   const abiValues = [getAbiValues(types, value, entryType)];
-  console.log(getAbiTypes(types, entryType));
   return encodeAbiParameters(abiParams, abiValues);
 }
 
-function getAbiTypes(types: TypedData, typeName: string): string {
-  const { type, isArray, isStruct } = stripType(types, typeName);
+function getAbiTypes(types: TypedDataTypes, typeName: string): string {
+  const { type, isArray, isStruct, fixedLength } = stripType(types, typeName);
 
   if (isStruct) {
     const fields = types[type];
     return `(${fields.map(({ type }) => getAbiTypes(types, type)).join(",")})`;
-  } else if (isArray) {
+  } else if (isArray && !fixedLength) {
     return `${getAbiTypes(types, type)}[]`;
+  } else if (isArray && fixedLength) {
+    return `(${new Array(fixedLength)
+      .fill(getAbiTypes(types, type))
+      .join(",")})`;
   } else {
     return type;
   }
 }
 
-function getAbiValues(types: TypedData, value: any, typeName: string): any[] {
+function getAbiValues(
+  types: TypedDataTypes,
+  value: any,
+  typeName: string,
+): any[] {
   const { type, isArray, isStruct } = stripType(types, typeName);
 
   if (isStruct) {
@@ -82,23 +81,11 @@ function getAbiValues(types: TypedData, value: any, typeName: string): any[] {
   }
 }
 
-function stripType(types: TypedData, _type: string) {
-  const isArray = _type.indexOf("[") !== -1;
-  const type = isArray ? _type.split("[")[0]! : _type;
-  const isStruct = !!types[type];
-
-  return {
-    isArray,
-    isStruct,
-    type,
-  };
-}
-
 export const encodeTypes = ({
   types,
   primaryType,
 }: {
-  types: TypedData;
+  types: TypedDataTypes;
   primaryType: string;
 }): Type[] => {
   const { EIP712Domain: _0, [primaryType]: _1, ...rest } = types;
@@ -114,30 +101,42 @@ export const encodeTypes = ({
     return BigInt(index);
   };
 
-  const mapType = (type: string): Type => {
-    const isStruct = type in types || !!types[type];
+  const mapType = (_type: string): Type => {
+    const { isArray, isStruct, type, fixedLength } = stripType(types, _type);
+
     if (isStruct) {
+      const signature = encodeStructType({ types, primaryType: type });
       return {
         key: TypeKey.Struct,
-        structSignature: encodeStructType({ types, primaryType: type }),
-        elements: types[type].map((type) => referenceType(type.type)),
+        signature,
+        hash: keccak256(toUtf8Bytes(signature)) as `0x${string}`,
+        elements: types[type].map((field) => referenceType(field.type)),
       };
     }
 
-    const isArray = type.includes("[");
-    if (isArray) {
-      const elementType = isArray ? type.split("[")[0] : type;
+    if (isArray && fixedLength != 0) {
+      return {
+        key: TypeKey.Struct,
+        signature: "",
+        hash: ZeroHash as `0x${string}`,
+        elements: new Array(fixedLength).fill(referenceType(type)),
+      };
+    }
+
+    if (isArray && fixedLength == 0) {
       return {
         key: TypeKey.Array,
-        structSignature: "",
-        elements: [referenceType(elementType)],
+        signature: "",
+        hash: ZeroHash as `0x${string}`,
+        elements: [referenceType(type)],
       };
     }
 
     // basic type
     return {
       key: isAtomic(type) ? TypeKey.Atomic : TypeKey.Dynamic,
-      structSignature: "",
+      signature: "",
+      hash: ZeroHash as `0x${string}`,
       elements: [],
     };
   };
@@ -151,3 +150,33 @@ export const encodeTypes = ({
 
   return result;
 };
+
+function stripType(types: TypedDataTypes, _type: string) {
+  const isArray = _type.indexOf("[") !== -1;
+  const type = isArray ? _type.split("[")[0]! : _type;
+  const isStruct = !!types[type];
+  const fixedLength = isArray ? Number(_type.split("[")[1].slice(0, -1)) : 0;
+
+  return {
+    isArray,
+    isStruct,
+    type,
+    fixedLength,
+  };
+}
+
+function domainTypes(domain: TypedDataValue): TypedDataField[] {
+  return [
+    typeof domain?.name === "string" && { name: "name", type: "string" },
+    domain?.version && { name: "version", type: "string" },
+    typeof domain?.chainId === "number" && {
+      name: "chainId",
+      type: "uint256",
+    },
+    domain?.verifyingContract && {
+      name: "verifyingContract",
+      type: "address",
+    },
+    domain?.salt && { name: "salt", type: "bytes32" },
+  ].filter(Boolean) as TypedDataField[];
+}

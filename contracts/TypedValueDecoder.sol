@@ -19,7 +19,7 @@ enum TypeKey {
 
 struct Type {
     TypeKey key;
-    string structSignature;
+    bytes32 hash;
     uint256[] elements;
 }
 
@@ -62,9 +62,7 @@ library TypeValueDecoder {
             false,
             result
         );
-        result.hash = keccak256(
-            abi.encodePacked(types[startIndex].structSignature)
-        );
+        result.hash = types[startIndex].hash;
     }
 
     /**
@@ -98,9 +96,7 @@ library TypeValueDecoder {
                 false,
                 result
             );
-            result.hash = keccak256(
-                abi.encodePacked(types[index].structSignature)
-            );
+            result.hash = types[index].hash;
         } else if (key == TypeKey.Array) {
             __block__(
                 data,
