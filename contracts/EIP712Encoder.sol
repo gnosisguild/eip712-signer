@@ -5,16 +5,11 @@ import "./TypedValueDecoder.sol";
 import "hardhat/console.sol";
 
 contract EIP712Encoder {
-    function hashStruct(
-        bytes calldata value,
-        Type[] calldata types,
-        uint256 primaryType
+    function hashDomain(
+        bytes calldata domain,
+        Type[] calldata types
     ) public view returns (bytes32) {
-        return
-            hashStruct(
-                value,
-                TypeValueDecoder.inspect(value, types, primaryType)
-            );
+        return hashStruct(domain, TypeValueDecoder.inspect(domain, types, 0));
     }
 
     function hashStruct(
