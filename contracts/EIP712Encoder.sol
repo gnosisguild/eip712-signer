@@ -5,6 +5,18 @@ import "./TypedValueDecoder.sol";
 import "hardhat/console.sol";
 
 contract EIP712Encoder {
+    function hash(
+        bytes calldata domain,
+        Type[] calldata types,
+        bytes calldata message
+    ) public view returns (bytes32) {
+        return
+            _hashTypedData(
+                hashStruct(domain, TypeValueDecoder.inspect(domain, types, 0)),
+                hashStruct(message, TypeValueDecoder.inspect(message, types, 1))
+            );
+    }
+
     function hashDomain(
         bytes calldata domain,
         Type[] calldata types
@@ -43,14 +55,14 @@ contract EIP712Encoder {
         Payload memory payload
     ) internal view returns (bytes32) {
         if (payload.key == TypeKey.Atomic) {
-            console.log("Atomic location %s", payload.location);
+            // console.log("Atomic location %s", payload.location);
             return TypeValueDecoder.word(value, payload.location);
         } else if (payload.key == TypeKey.Dynamic) {
             uint256 location = payload.location + 32;
             uint256 length = uint256(
                 TypeValueDecoder.word(value, payload.location)
             );
-            console.log("Dynamic location %s length %s", location, length);
+            // console.log("Dynamic location %s length %s", location, length);
             return keccak256(TypeValueDecoder.pluck(value, location, length));
         } else if (payload.key == TypeKey.Array) {
             return hashArray(value, payload);
@@ -59,6 +71,20 @@ contract EIP712Encoder {
         } else {
             require(payload.key == TypeKey.Hash, "Failed");
             return bytes32(value);
+        }
+    }
+
+    function _hashTypedData(
+        bytes32 domainSeparator,
+        bytes32 structHash
+    ) internal pure returns (bytes32 digest) {
+        /// @solidity memory-safe-assembly
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, hex"19_01")
+            mstore(add(ptr, 0x02), domainSeparator)
+            mstore(add(ptr, 0x22), structHash)
+            digest := keccak256(ptr, 0x42)
         }
     }
 }

@@ -20,14 +20,14 @@ describe("EIP7127Encoder", () => {
         salt: keccak256(toUtf8Bytes("Hello World")) as `0x${string}`,
       };
 
-      const types = encodeTypes({
+      const _types = encodeTypes({
         types: {
           EIP712Domain: getTypesForEIP712Domain({ domain }),
         },
         primaryType: "EIP712Domain",
       });
 
-      const value = encodeTypedValue(
+      const _domain = encodeTypedValue(
         {
           EIP712Domain: getTypesForEIP712Domain({ domain }),
         },
@@ -35,7 +35,7 @@ describe("EIP7127Encoder", () => {
         "EIP712Domain",
       );
 
-      expect(await encoder.hashDomain(value, types)).to.equal(
+      expect(await encoder.hashDomain(_domain, _types)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
     });
@@ -51,14 +51,14 @@ describe("EIP7127Encoder", () => {
         chainId: 1,
       };
 
-      const types = encodeTypes({
+      const _types = encodeTypes({
         types: {
           EIP712Domain: getTypesForEIP712Domain({ domain }),
         },
         primaryType: "EIP712Domain",
       });
 
-      const value = encodeTypedValue(
+      const _domain = encodeTypedValue(
         {
           EIP712Domain: getTypesForEIP712Domain({ domain }),
         },
@@ -66,7 +66,7 @@ describe("EIP7127Encoder", () => {
         "EIP712Domain",
       );
 
-      expect(await encoder.hashDomain(value, types)).to.equal(
+      expect(await encoder.hashDomain(_domain, _types)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
     });
