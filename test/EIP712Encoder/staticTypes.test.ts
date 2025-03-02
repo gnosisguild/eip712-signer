@@ -1,7 +1,7 @@
 import { compareToEthersHashing } from "./compareToEthersHashing";
 
 describe("EIP7127Encoder", () => {
-  describe("Atomic Types", () => {
+  describe("Static Types", () => {
     const domain = { chainId: 1 };
 
     it("should handle boolean values", async () => {
