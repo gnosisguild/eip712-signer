@@ -1,9 +1,8 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { TypedDataEncoder, keccak256, toUtf8Bytes } from "ethers";
-import { getTypesForEIP712Domain } from "viem";
 
-import { encodeTypedValue, encodeTypes } from "../../src/encodeTypedValue";
+import { _encodeDomain } from "../../src/encodeTypedValue";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
 describe("EIP7127Encoder", () => {
@@ -20,22 +19,9 @@ describe("EIP7127Encoder", () => {
         salt: keccak256(toUtf8Bytes("Hello World")) as `0x${string}`,
       };
 
-      const _types = encodeTypes({
-        types: {
-          EIP712Domain: getTypesForEIP712Domain({ domain }),
-        },
-        primaryType: "EIP712Domain",
-      });
+      const _domain = _encodeDomain(domain);
 
-      const _domain = encodeTypedValue(
-        {
-          EIP712Domain: getTypesForEIP712Domain({ domain }),
-        },
-        domain,
-        "EIP712Domain",
-      );
-
-      expect(await encoder.hashDomain(_domain, _types)).to.equal(
+      expect(await encoder.hashDomain(_domain)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
     });
@@ -50,22 +36,9 @@ describe("EIP7127Encoder", () => {
         salt: keccak256(toUtf8Bytes("Here is a custom salt")) as `0x${string}`,
       };
 
-      const _types = encodeTypes({
-        types: {
-          EIP712Domain: getTypesForEIP712Domain({ domain }),
-        },
-        primaryType: "EIP712Domain",
-      });
+      const _domain = _encodeDomain(domain);
 
-      const _domain = encodeTypedValue(
-        {
-          EIP712Domain: getTypesForEIP712Domain({ domain }),
-        },
-        domain,
-        "EIP712Domain",
-      );
-
-      expect(await encoder.hashDomain(_domain, _types)).to.equal(
+      expect(await encoder.hashDomain(_domain)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
     });

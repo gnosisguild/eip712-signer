@@ -1,35 +1,43 @@
 import { AbiCoder, TypedDataDomain, TypedDataField, ZeroHash } from "ethers";
 
 import { encodeType, hashType } from "./hashType";
-import { Type, TypeKey } from "./types";
+import { AbiParam, AbiType } from "./types";
 import { isAtomic } from "./utils";
 
 export type TypedDataTypes = Record<string, Array<TypedDataField>>;
 export type TypedDataValue = Record<string, any>;
 
-export const encodeTypedData = (
+export const _encodeDomain = (
   domain: TypedDataDomain,
-  types: TypedDataTypes,
-  message: TypedDataValue,
-  primaryType: string,
-): [`0x${string}`, Type[], `0x${string}`] => {
+): { data: `0x${string}`; params: AbiParam[] } => {
   // TODO validate
   // TODO infer field
   // validateTypedData({ domain, message, primaryType, types });
 
-  types = { EIP712Domain: domainTypes(domain), ...types };
+  const types = { EIP712Domain: domainTypes(domain) };
 
-  return [
-    encodeTypedValue(types, domain, "EIP712Domain"),
-    encodeTypes({
-      types,
-      primaryType,
-    }),
-    encodeTypedValue(types, message, primaryType),
-  ];
+  return {
+    data: encodeData(types, domain, "EIP712Domain"),
+    params: encodeTypes({ types, primaryType: "EIP712Domain" }),
+  };
 };
 
-export function encodeTypedValue(
+export const _encodeMessage = (
+  types: TypedDataTypes,
+  message: TypedDataValue,
+  primaryType: string,
+): { data: `0x${string}`; params: AbiParam[] } => {
+  // TODO validate
+  // TODO infer field
+  // validateTypedData({ domain, message, primaryType, types });
+
+  return {
+    data: encodeData(types, message, primaryType),
+    params: encodeTypes({ types, primaryType }),
+  };
+};
+
+function encodeData(
   types: TypedDataTypes,
   value: TypedDataValue,
   entryType: string,
@@ -84,10 +92,10 @@ export const encodeTypes = ({
 }: {
   types: TypedDataTypes;
   primaryType: string;
-}): Type[] => {
-  const { EIP712Domain: _0, [primaryType]: _1, ...rest } = types;
+}): AbiParam[] => {
+  const { [primaryType]: _1, ...rest } = types;
 
-  const orderedTypeKeys = ["EIP712Domain", primaryType, ...Object.keys(rest)];
+  const orderedTypeKeys = [primaryType, ...Object.keys(rest)];
 
   const referenceType = (type: string): bigint => {
     const index = orderedTypeKeys.indexOf(type);
@@ -98,42 +106,42 @@ export const encodeTypes = ({
     return BigInt(index);
   };
 
-  const mapType = (_type: string): Type => {
+  const mapType = (_type: string): AbiParam => {
     const { isArray, isStruct, type, fixedLength } = parseType(types, _type);
 
     if (isStruct) {
       return {
-        key: TypeKey.Struct,
+        _type: AbiType.Tuple,
         signature: encodeType({ types, primaryType: type }),
-        hash: hashType({ types, primaryType: type }) as `0x${string}`,
-        elements: types[type].map((field) => referenceType(field.type)),
+        typeHash: hashType({ types, primaryType: type }) as `0x${string}`,
+        fields: types[type].map((field) => referenceType(field.type)),
       };
     }
 
     if (isArray && fixedLength) {
       return {
-        key: TypeKey.Struct,
+        _type: AbiType.Tuple,
         signature: "",
-        hash: ZeroHash as `0x${string}`,
-        elements: new Array(fixedLength).fill(referenceType(type)),
+        typeHash: ZeroHash as `0x${string}`,
+        fields: new Array(fixedLength).fill(referenceType(type)),
       };
     }
 
     if (isArray && !fixedLength) {
       return {
-        key: TypeKey.Array,
+        _type: AbiType.Array,
         signature: "",
-        hash: ZeroHash as `0x${string}`,
-        elements: [referenceType(type)],
+        typeHash: ZeroHash as `0x${string}`,
+        fields: [referenceType(type)],
       };
     }
 
     // basic type
     return {
-      key: isAtomic(type) ? TypeKey.Atomic : TypeKey.Dynamic,
+      _type: isAtomic(type) ? AbiType.Static : AbiType.Dynamic,
       signature: "",
-      hash: ZeroHash as `0x${string}`,
-      elements: [],
+      typeHash: ZeroHash as `0x${string}`,
+      fields: [],
     };
   };
 

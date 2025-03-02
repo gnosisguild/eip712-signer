@@ -1,48 +1,43 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity >=0.8.17 <0.9.0;
 
-struct Payload {
-    TypeKey key;
-    bytes32 hash;
-    uint256 location;
-    uint256 size;
-    Payload[] children;
-}
-
-enum TypeKey {
-    Atomic,
+enum AbiType {
+    Static,
     Dynamic,
     Array,
-    Struct,
-    Hash
+    Tuple
 }
 
-struct Type {
-    TypeKey key;
-    bytes32 hash;
-    uint256[] elements;
+struct AbiParam {
+    AbiType _type;
+    bytes32 typeHash;
+    uint256[] fields;
 }
 
-import "hardhat/console.sol";
+struct AbiPayload {
+    AbiType _type;
+    bytes32 typeHash;
+    uint256 location;
+    uint256 size;
+    AbiPayload[] children;
+}
 
-/**
- * @title Decoder - a library that discovers parameter locations in calldata
- * from a list of conditions.
- * @author Cristóvão Honorato - <cristovao.honorato@gnosis.io>
- */
-library TypeValueDecoder {
+struct AbiEncoded {
+    bytes data;
+    AbiParam[] params;
+}
+
+library AbiDecoder {
     error CalldataOutOfBounds();
 
     /**
-     * @dev Maps the location and size of parameters in the encoded transaction data.
-     * @param data The encoded transaction data.
+     * @dev Maps the location and size of each abo part in the encoded data.
+     * @param encoded The abi encoded data and params.
      * @return result The mapped location and size of parameters in the encoded transaction data.
      */
     function inspect(
-        bytes calldata data,
-        Type[] calldata types,
-        uint256 startIndex
-    ) internal pure returns (Payload memory result) {
+        AbiEncoded calldata encoded
+    ) internal pure returns (AbiPayload memory result) {
         /*
          * In the parameter encoding area, there is a region called the head
          * that is divided into 32-byte chunks. Each parameter has its own
@@ -50,19 +45,19 @@ library TypeValueDecoder {
          * - Static parameters are encoded inline.
          * - Dynamic parameters have an offset to the tail, which is the start
          *   of the actual encoding for the dynamic parameter. Note that the
-         *   offset does not include the 4-byte function signature."
+         *   offset is relative to the start of the block"
          *
          */
         __block__(
-            data,
-            _isInline(types, startIndex) ? 0 : 32,
-            types,
-            startIndex,
-            types[startIndex].elements.length,
+            encoded.data,
+            _isInline(encoded.params, 0) ? 0 : 32,
+            encoded.params,
+            0,
+            encoded.params[0].fields.length,
             false,
             result
         );
-        result.hash = types[startIndex].hash;
+        result.typeHash = encoded.params[0].typeHash;
     }
 
     /**
@@ -70,39 +65,40 @@ library TypeValueDecoder {
      * size within calldata.
      * @param data The encoded transaction data.
      * @param location The current offset within the calldata buffer.
-     * @param types The current node being traversed within the parameter tree.
+     * @param params The current node being traversed within the parameter tree.
      * @param result The location and size of the parameter within calldata.
      */
     function _walk(
         bytes calldata data,
         uint256 location,
-        Type[] calldata types,
-        uint256 index,
-        Payload memory result
+        AbiParam[] calldata params,
+        uint256 paramIndex,
+        AbiPayload memory result
     ) private pure {
-        TypeKey key = types[index].key;
+        AbiType _type = params[paramIndex]._type;
 
-        if (key == TypeKey.Atomic || key == TypeKey.Hash) {
+        if (_type == AbiType.Static) {
             result.size = 32;
-        } else if (key == TypeKey.Dynamic) {
+        } else if (_type == AbiType.Dynamic) {
             result.size = 32 + _ceil32(uint256(word(data, location)));
-        } else if (key == TypeKey.Struct) {
+        } else if (_type == AbiType.Tuple) {
             __block__(
                 data,
                 location,
-                types,
-                index,
-                types[index].elements.length,
+                params,
+                paramIndex,
+                params[paramIndex].fields.length,
                 false,
                 result
             );
-            result.hash = types[index].hash;
-        } else if (key == TypeKey.Array) {
+            result.typeHash = params[paramIndex].typeHash;
+        } else {
+            // Array
             __block__(
                 data,
                 location + 32,
-                types,
-                index,
+                params,
+                paramIndex,
                 uint256(word(data, location)),
                 true,
                 result
@@ -110,7 +106,7 @@ library TypeValueDecoder {
             result.size += 32;
         }
 
-        result.key = key;
+        result._type = _type;
         result.location = location;
     }
 
@@ -118,35 +114,36 @@ library TypeValueDecoder {
      * @dev Recursively walk through the TypeTree to decode a block of parameters.
      * @param data The encoded transaction data.
      * @param location The current location of the parameter block being processed.
-     * @param types The current TypeTree node being processed.
-     * @param index The current Type being processed.
-     * @param length The number of parts in the block.
+     * @param params The current TypeTree node being processed.
+     * @param paramIndex The current Type being processed.
+     * @param blockLength The number of parts in the block.
      * @param template whether first child is type descriptor for all parts.
      * @param result The decoded Payload.
      */
     function __block__(
         bytes calldata data,
         uint256 location,
-        Type[] calldata types,
-        uint256 index,
-        uint256 length,
+        AbiParam[] calldata params,
+        uint256 paramIndex,
+        uint256 blockLength,
         bool template,
-        Payload memory result
+        AbiPayload memory result
     ) private pure {
-        result.children = new Payload[](length);
+        result.children = new AbiPayload[](blockLength);
         bool isInline;
-        if (template) isInline = _isInline(types, types[index].elements[0]);
+        if (template)
+            isInline = _isInline(params, params[paramIndex].fields[0]);
 
         uint256 offset;
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < blockLength; ) {
             if (!template)
-                isInline = _isInline(types, types[index].elements[i]);
+                isInline = _isInline(params, params[paramIndex].fields[i]);
 
             _walk(
                 data,
                 _locationInBlock(data, location, offset, isInline),
-                types,
-                types[index].elements[template ? 0 : i],
+                params,
+                params[paramIndex].fields[template ? 0 : i],
                 result.children[i]
             );
 
@@ -225,23 +222,23 @@ library TypeValueDecoder {
     }
 
     function _isInline(
-        Type[] calldata types,
+        AbiParam[] calldata params,
         uint256 index
     ) internal pure returns (bool) {
-        TypeKey key = types[index].key;
-        if (key == TypeKey.Atomic || key == TypeKey.Hash) {
+        AbiParam calldata param = params[index];
+
+        if (param._type == AbiType.Static) {
             return true;
-        } else if (key == TypeKey.Dynamic || key == TypeKey.Array) {
+        } else if (
+            param._type == AbiType.Dynamic || param._type == AbiType.Array
+        ) {
             return false;
         } else {
-            uint256 length = types[index].elements.length;
+            uint256 length = param.fields.length;
 
-            for (uint256 i; i < length; ) {
-                if (!_isInline(types, types[index].elements[i])) {
+            for (uint256 i; i < length; ++i) {
+                if (!_isInline(params, param.fields[i])) {
                     return false;
-                }
-                unchecked {
-                    ++i;
                 }
             }
             return true;

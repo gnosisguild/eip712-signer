@@ -6,7 +6,8 @@ import { TypedDataEncoder } from "ethers";
 import {
   TypedDataTypes,
   TypedDataValue,
-  encodeTypedData,
+  _encodeDomain,
+  _encodeMessage,
 } from "../../src/encodeTypedValue";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
@@ -22,14 +23,10 @@ export async function compareToEthersHashing({
   primaryType: string;
 }) {
   const { encoder } = await loadFixture(deployEIP712Encoder);
-  const [_domain, _types, _message] = encodeTypedData(
-    domain,
-    types,
-    message,
-    primaryType,
-  );
+  const _domain = _encodeDomain(domain);
+  const _message = _encodeMessage(types, message, primaryType);
 
-  expect(await encoder.hash(_domain, _types, _message)).to.equal(
+  expect(await encoder.hash(_domain, _message)).to.equal(
     TypedDataEncoder.hash(domain, types, message),
   );
 }

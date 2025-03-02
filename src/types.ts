@@ -1,27 +1,26 @@
-export enum TypeKey {
-  Atomic,
+export enum AbiType {
+  Static,
   Dynamic,
   Array,
-  Struct,
-  Hash,
+  Tuple,
 }
 
-export type Type =
+export type AbiParam =
   | {
-      key: Exclude<TypeKey, TypeKey.Struct | TypeKey.Array>;
+      _type: Exclude<AbiType, AbiType.Tuple | AbiType.Array>;
       signature: "";
-      hash: `0x${string}`;
-      elements: [];
+      typeHash: `0x${string}`;
+      fields: [];
     }
   | {
-      key: TypeKey.Array;
+      _type: AbiType.Array;
       signature: "";
-      hash: `0x${string}`;
-      elements: [bigint];
+      typeHash: `0x${string}`;
+      fields: [bigint];
     }
   | {
-      key: TypeKey.Struct;
+      _type: AbiType.Tuple;
       signature: string;
-      hash: `0x${string}`;
-      elements: bigint[];
+      typeHash: `0x${string}`;
+      fields: bigint[];
     };
