@@ -14,16 +14,16 @@ contract EIP712Encoder {
     function hashDomain(
         AbiEncoded calldata domain
     ) public pure returns (bytes32) {
-        return _hashStruct(domain.data, AbiDecoder.inspect(domain));
+        return _hashFields(domain.data, AbiDecoder.inspect(domain));
     }
 
     function hashStruct(
         AbiEncoded calldata value
     ) public pure returns (bytes32) {
-        return _hashStruct(value.data, AbiDecoder.inspect(value));
+        return _hashFields(value.data, AbiDecoder.inspect(value));
     }
 
-    function _hashStruct(
+    function _hashFields(
         bytes calldata value,
         AbiPayload memory payload
     ) internal pure returns (bytes32) {
@@ -32,19 +32,10 @@ contract EIP712Encoder {
             result[i] = _field(value, payload.children[i]);
         }
 
-        return keccak256(abi.encodePacked(payload.typeHash, result));
-    }
-
-    function _hashArray(
-        bytes calldata value,
-        AbiPayload memory payload
-    ) private pure returns (bytes32) {
-        bytes32[] memory result = new bytes32[](payload.children.length);
-        for (uint256 i = 0; i < payload.children.length; ++i) {
-            result[i] = _field(value, payload.children[i]);
-        }
-
-        return keccak256(abi.encodePacked(result));
+        return
+            payload.typeHash != bytes32(0)
+                ? keccak256(abi.encodePacked(payload.typeHash, result))
+                : keccak256(abi.encodePacked(result));
     }
 
     function _hashDynamic(
@@ -66,13 +57,8 @@ contract EIP712Encoder {
             return AbiDecoder.word(data, payload.location);
         } else if (payload._type == AbiType.Dynamic) {
             return _hashDynamic(data, payload);
-        } else if (payload._type == AbiType.Array) {
-            return _hashArray(data, payload);
         } else {
-            return
-                payload.typeHash != bytes32(0)
-                    ? _hashStruct(data, payload)
-                    : _hashArray(data, payload);
+            return _hashFields(data, payload);
         }
     }
 
