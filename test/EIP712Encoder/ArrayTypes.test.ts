@@ -1,7 +1,7 @@
-import { compareToEthersHashing } from "../compareToEthersHashing";
+import { compareToEthersHashing } from "./compareToEthersHashing";
 
-describe("EIP7127Encoder - Structs", () => {
-  describe("Arrays", () => {
+describe("EIP7127Encoder", () => {
+  describe("Array Types", () => {
     it("should hash a struct with arrays of atomic types (fixed length)", async () => {
       const domain = {
         chainId: 1,

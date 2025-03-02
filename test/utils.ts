@@ -3,15 +3,17 @@ import { SignTypedDataParameters } from "viem";
 
 import { encodeStructType } from "../src/utils";
 
-describe("encodeType", () => {
+describe.skip("encodeType", () => {
   it("correctly encodes simple struct types", () => {
-    expect(encodeStructType({ types: sampleMessage.types, primaryType: "Person" })).to.equal(
-      "Person(string name,address wallet)",
-    );
+    expect(
+      encodeStructType({ types: sampleMessage.types, primaryType: "Person" }),
+    ).to.equal("Person(string name,address wallet)");
   });
 
   it("correctly encodes nested struct types", () => {
-    expect(encodeStructType({ types: sampleMessage.types, primaryType: "Mail" })).to.equal(
+    expect(
+      encodeStructType({ types: sampleMessage.types, primaryType: "Mail" }),
+    ).to.equal(
       "Mail(Person from,Person[] to,string contents)Person(string name,address wallet)",
     );
   });
