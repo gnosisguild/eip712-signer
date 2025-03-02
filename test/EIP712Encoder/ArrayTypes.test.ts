@@ -324,9 +324,5 @@ describe("EIP7127Encoder", () => {
         primaryType: "Document",
       });
     });
-
-    it.skip("should handle large arrays", () => {
-      // Test hashing structs with large arrays.
-    });
   });
 });

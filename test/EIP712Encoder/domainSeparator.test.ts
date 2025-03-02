@@ -40,15 +40,14 @@ describe("EIP7127Encoder", () => {
       );
     });
 
-    it.skip("should handle domain separator variations (missing fields, custom fields)", () => {
-      // Test different variations of the EIP-712 domain separator.
-    });
-
-    it("should verify the chainId field in the domain separator", async () => {
+    it("should handle custom salt usage in the domain separator", async () => {
       const { encoder } = await loadFixture(deployEIP712Encoder);
 
       const domain = {
-        chainId: 1,
+        chainId: 35377,
+        verifyingContract:
+          "0x00000000000000000000000000000000000fffff" as `0x${string}`,
+        salt: keccak256(toUtf8Bytes("Here is a custom salt")) as `0x${string}`,
       };
 
       const _types = encodeTypes({
@@ -69,14 +68,6 @@ describe("EIP7127Encoder", () => {
       expect(await encoder.hashDomain(_domain, _types)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
-    });
-
-    it.skip("should handle custom salt usage in the domain separator", () => {
-      // Test that the encoder correctly handles a custom salt field.
-    });
-
-    it.skip("should reject invalid domain separators", () => {
-      // Test that the encoder rejects invalid domain separators.
     });
   });
 });
