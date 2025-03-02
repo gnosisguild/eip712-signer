@@ -4,7 +4,7 @@ describe("EIP7127Encoder", () => {
   describe("Atomic Types", () => {
     const domain = { chainId: 1 };
 
-    it.only("should handle boolean values", async () => {
+    it("should handle boolean values", async () => {
       const types = { Person: [{ name: "adult", type: "bool" }] };
 
       await compareToEthersHashing({
@@ -22,7 +22,7 @@ describe("EIP7127Encoder", () => {
       });
     });
 
-    it.only("should handle address values", async () => {
+    it("should handle address values", async () => {
       const types = { Person: [{ name: "address", type: "address" }] };
 
       await compareToEthersHashing({
@@ -40,7 +40,7 @@ describe("EIP7127Encoder", () => {
       });
     });
 
-    it.only("should handle bytes1 - bytes32 values", async () => {
+    it("should handle bytes1 - bytes32 values", async () => {
       const typesBytes1 = { Person: [{ name: "meta", type: "bytes1" }] };
       const typesBytes16 = { Person: [{ name: "meta", type: "bytes16" }] };
       const typesBytes32 = { Person: [{ name: "meta", type: "bytes32" }] };
