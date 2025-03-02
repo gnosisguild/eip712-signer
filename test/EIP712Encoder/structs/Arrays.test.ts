@@ -1,40 +1,7 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
-import { TypedDataDomain, TypedDataEncoder } from "ethers";
-
-import {
-  TypedDataTypes,
-  TypedDataValue,
-  encodeTypedData,
-} from "../../../src/encodeTypedValue";
-import { deployEIP712Encoder } from "../../EIP712Encoder.fixture";
+import { compareToEthersHashing } from "../compareToEthersHashing";
 
 describe("EIP7127Encoder - Structs", () => {
   describe("Arrays", () => {
-    async function assertAgainstEthers({
-      domain,
-      types,
-      message,
-      primaryType,
-    }: {
-      domain: TypedDataDomain;
-      types: TypedDataTypes;
-      message: TypedDataValue;
-      primaryType: string;
-    }) {
-      const { encoder } = await loadFixture(deployEIP712Encoder);
-      const [_domain, _types, _message] = encodeTypedData(
-        domain,
-        types,
-        message,
-        primaryType,
-      );
-
-      expect(await encoder.hash(_domain, _types, _message)).to.equal(
-        TypedDataEncoder.hash(domain, types, message),
-      );
-    }
-
     it("should hash a struct with arrays of atomic types (fixed length)", async () => {
       const domain = {
         chainId: 1,
@@ -51,7 +18,7 @@ describe("EIP7127Encoder - Structs", () => {
         scores: [85, 90, 95],
       };
 
-      await assertAgainstEthers({
+      await compareToEthersHashing({
         domain,
         types,
         message,
@@ -75,7 +42,7 @@ describe("EIP7127Encoder - Structs", () => {
         scores: [85, 90, 95],
       };
 
-      await assertAgainstEthers({
+      await compareToEthersHashing({
         domain,
         types,
         message,
@@ -88,7 +55,8 @@ describe("EIP7127Encoder - Structs", () => {
         name: "Array Test",
         version: "1",
         chainId: 1,
-        verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
+        verifyingContract:
+          "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC" as `0x${string}`,
       };
 
       // Define the types for the EIP-712 structured data
@@ -141,7 +109,7 @@ describe("EIP7127Encoder - Structs", () => {
           },
         ],
       };
-      await assertAgainstEthers({
+      await compareToEthersHashing({
         domain,
         types,
         message,
@@ -154,7 +122,8 @@ describe("EIP7127Encoder - Structs", () => {
         name: "Dynamic Array Test",
         version: "2",
         chainId: 1,
-        verifyingContract: "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db",
+        verifyingContract:
+          "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db" as `0x${string}`,
       };
 
       // Define the types for the EIP-712 structured data with dynamic arrays
@@ -231,7 +200,7 @@ describe("EIP7127Encoder - Structs", () => {
         publishDate: 1677596400,
       };
 
-      await assertAgainstEthers({
+      await compareToEthersHashing({
         domain,
         types,
         message,
@@ -244,7 +213,8 @@ describe("EIP7127Encoder - Structs", () => {
         name: "Mixed Array Test",
         version: "3",
         chainId: 1,
-        verifyingContract: "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db",
+        verifyingContract:
+          "0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db" as `0x${string}`,
       };
 
       const types = {
@@ -347,7 +317,7 @@ describe("EIP7127Encoder - Structs", () => {
         tags: ["documentation", "tutorial", "standards", "typed-data"],
       };
 
-      await assertAgainstEthers({
+      await compareToEthersHashing({
         domain,
         types,
         message,
