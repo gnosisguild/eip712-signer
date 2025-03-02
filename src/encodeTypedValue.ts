@@ -1,14 +1,8 @@
-import {
-  TypedDataDomain,
-  TypedDataField,
-  ZeroHash,
-  keccak256,
-  toUtf8Bytes,
-} from "ethers";
-import { encodeAbiParameters, parseAbiParameters } from "viem";
+import { AbiCoder, TypedDataDomain, TypedDataField, ZeroHash } from "ethers";
 
+import { encodeType, hashType } from "./hashType";
 import { Type, TypeKey } from "./types";
-import { encodeStructType, isAtomic } from "./utils";
+import { isAtomic } from "./utils";
 
 export type TypedDataTypes = Record<string, Array<TypedDataField>>;
 export type TypedDataValue = Record<string, any>;
@@ -40,21 +34,24 @@ export function encodeTypedValue(
   value: TypedDataValue,
   entryType: string,
 ) {
-  const abiParams = parseAbiParameters(getAbiTypes(types, entryType));
-  const abiValues = [getAbiValues(types, value, entryType)];
-  return encodeAbiParameters(abiParams, abiValues);
+  return AbiCoder.defaultAbiCoder().encode(
+    [getAbiTypes(types, entryType)],
+    [getAbiValues(types, value, entryType)],
+  ) as `0x${string}`;
 }
 
 function getAbiTypes(types: TypedDataTypes, typeName: string): string {
-  const { type, isArray, isStruct, fixedLength } = stripType(types, typeName);
+  const { type, isArray, isStruct, fixedLength } = parseType(types, typeName);
 
   if (isStruct) {
     const fields = types[type];
-    return `(${fields.map(({ type }) => getAbiTypes(types, type)).join(",")})`;
+    return `tuple(${fields
+      .map(({ type }) => getAbiTypes(types, type))
+      .join(",")})`;
   } else if (isArray && !fixedLength) {
     return `${getAbiTypes(types, type)}[]`;
   } else if (isArray && fixedLength) {
-    return `(${new Array(fixedLength)
+    return `tuple(${new Array(fixedLength)
       .fill(getAbiTypes(types, type))
       .join(",")})`;
   } else {
@@ -67,7 +64,7 @@ function getAbiValues(
   value: any,
   typeName: string,
 ): any[] {
-  const { type, isArray, isStruct } = stripType(types, typeName);
+  const { type, isArray, isStruct } = parseType(types, typeName);
 
   if (isStruct) {
     const fields = types[type];
@@ -102,19 +99,18 @@ export const encodeTypes = ({
   };
 
   const mapType = (_type: string): Type => {
-    const { isArray, isStruct, type, fixedLength } = stripType(types, _type);
+    const { isArray, isStruct, type, fixedLength } = parseType(types, _type);
 
     if (isStruct) {
-      const signature = encodeStructType({ types, primaryType: type });
       return {
         key: TypeKey.Struct,
-        signature,
-        hash: keccak256(toUtf8Bytes(signature)) as `0x${string}`,
+        signature: encodeType({ types, primaryType: type }),
+        hash: hashType({ types, primaryType: type }) as `0x${string}`,
         elements: types[type].map((field) => referenceType(field.type)),
       };
     }
 
-    if (isArray && fixedLength != 0) {
+    if (isArray && fixedLength) {
       return {
         key: TypeKey.Struct,
         signature: "",
@@ -123,7 +119,7 @@ export const encodeTypes = ({
       };
     }
 
-    if (isArray && fixedLength == 0) {
+    if (isArray && !fixedLength) {
       return {
         key: TypeKey.Array,
         signature: "",
@@ -151,16 +147,16 @@ export const encodeTypes = ({
   return result;
 };
 
-function stripType(types: TypedDataTypes, _type: string) {
-  const isArray = _type.indexOf("[") !== -1;
-  const type = isArray ? _type.split("[")[0]! : _type;
+function parseType(types: TypedDataTypes, type: string) {
+  const isArray = type.indexOf("[") !== -1;
+  const parsedType = isArray ? type.split("[")[0] : type;
   const isStruct = !!types[type];
-  const fixedLength = isArray ? Number(_type.split("[")[1].slice(0, -1)) : 0;
+  const fixedLength = isArray ? Number(type.split("[")[1].slice(0, -1)) : 0;
 
   return {
     isArray,
     isStruct,
-    type,
+    type: parsedType,
     fixedLength,
   };
 }

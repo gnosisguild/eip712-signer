@@ -2,7 +2,6 @@
 pragma solidity >=0.8.21;
 
 import "./TypedValueDecoder.sol";
-import "hardhat/console.sol";
 
 contract EIP712Encoder {
     function hash(
@@ -28,8 +27,6 @@ contract EIP712Encoder {
         bytes calldata value,
         Payload memory payload
     ) internal view returns (bytes32) {
-        require(payload.hash != bytes32(0), "oops");
-
         bytes32[] memory result = new bytes32[](payload.children.length);
         for (uint256 i = 0; i < payload.children.length; i++) {
             result[i] = _encodeField(value, payload.children[i]);
@@ -62,12 +59,14 @@ contract EIP712Encoder {
             uint256 length = uint256(
                 TypeValueDecoder.word(value, payload.location)
             );
-            // console.log("Dynamic location %s length %s", location, length);
             return keccak256(TypeValueDecoder.pluck(value, location, length));
         } else if (payload.key == TypeKey.Array) {
             return hashArray(value, payload);
         } else if (payload.key == TypeKey.Struct) {
-            return hashStruct(value, payload);
+            return
+                payload.hash != bytes32(0)
+                    ? hashStruct(value, payload)
+                    : hashArray(value, payload);
         } else {
             require(payload.key == TypeKey.Hash, "Failed");
             return bytes32(value);

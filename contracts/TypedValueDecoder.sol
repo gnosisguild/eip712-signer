@@ -135,7 +135,7 @@ library TypeValueDecoder {
     ) private pure {
         result.children = new Payload[](length);
         bool isInline;
-        if (template) isInline = _isInline(types, index);
+        if (template) isInline = _isInline(types, types[index].elements[0]);
 
         uint256 offset;
         for (uint256 i; i < length; ) {
