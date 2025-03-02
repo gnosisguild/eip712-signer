@@ -3,11 +3,9 @@ import dotenv from "dotenv";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 
-import "./tasks/accounts";
-import "./tasks/deploy";
-
 dotenv.config();
-const { INFURA_KEY, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, MNEMONIC } = process.env;
+const { INFURA_KEY, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, MNEMONIC } =
+  process.env;
 
 const chainIds = {
   hardhat: 31337,
@@ -54,7 +52,8 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       accounts: {
-        mnemonic: "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat",
+        mnemonic:
+          "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat",
       },
       chainId: chainIds.hardhat,
     },
