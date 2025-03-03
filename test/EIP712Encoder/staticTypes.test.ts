@@ -11,14 +11,12 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message: { adult: true },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
         domain,
         types,
         message: { adult: false },
-        primaryType: "Person",
       });
     });
 
@@ -29,14 +27,12 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message: { address: "0x0000000000000000000000000000000000000000" },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
         domain,
         types,
         message: { address: "0x0000000000000000000000000000000000000123" },
-        primaryType: "Person",
       });
     });
 
@@ -49,28 +45,24 @@ describe("EIP7127Encoder", () => {
         domain,
         types: typesBytes1,
         message: { meta: "0x00" },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
         domain,
         types: typesBytes1,
         message: { meta: "0xff" },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
         domain,
         types: typesBytes16,
         message: { meta: "0x00000000000000000000000000000000" },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
         domain,
         types: typesBytes16,
         message: { meta: "0xf000000000000000000000000000000f" },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
@@ -79,7 +71,6 @@ describe("EIP7127Encoder", () => {
         message: {
           meta: "0x0000000000000000000000000000000000000000000000000000000000000000",
         },
-        primaryType: "Person",
       });
 
       await compareToEthersHashing({
@@ -88,7 +79,6 @@ describe("EIP7127Encoder", () => {
         message: {
           meta: "0xf000000000000000000000000000000ff000000000000000000000000000000f",
         },
-        primaryType: "Person",
       });
     });
   });

@@ -28,7 +28,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Outer",
       });
     });
 
@@ -56,7 +55,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Outer",
       });
     });
 
@@ -91,7 +89,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Outer",
       });
     });
 
@@ -126,7 +123,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Outer",
       });
     });
   });

@@ -26,7 +26,6 @@ describe("EIP7127Encoder", () => {
             { text: "123", data: "0x112233" },
           ],
         },
-        primaryType: "ParentStruct",
       });
 
       await compareToEthersHashing({
@@ -39,7 +38,6 @@ describe("EIP7127Encoder", () => {
             { text: "", data: "0x" },
           ],
         },
-        primaryType: "ParentStruct",
       });
     });
 
@@ -66,7 +64,6 @@ describe("EIP7127Encoder", () => {
         message: {
           item: { nested: { counter: 1, text: "abc", data: "0xaabbcc" } },
         },
-        primaryType: "ParentStruct",
       });
 
       await compareToEthersHashing({
@@ -77,7 +74,6 @@ describe("EIP7127Encoder", () => {
             nested: { counter: 99282398, text: "", data: "0x112233" },
           },
         },
-        primaryType: "ParentStruct",
       });
 
       await compareToEthersHashing({
@@ -88,7 +84,6 @@ describe("EIP7127Encoder", () => {
             nested: { counter: 99282398, text: "11", data: "0x" },
           },
         },
-        primaryType: "ParentStruct",
       });
     });
 
@@ -117,7 +112,6 @@ describe("EIP7127Encoder", () => {
             { nested: { text: "123", data: "0x112233" } },
           ],
         },
-        primaryType: "ParentStruct",
       });
 
       await compareToEthersHashing({
@@ -129,14 +123,12 @@ describe("EIP7127Encoder", () => {
             { nested: { text: "", data: "0x112233" } },
           ],
         },
-        primaryType: "ParentStruct",
       });
 
       await compareToEthersHashing({
         domain,
         types,
         message: { items: [] },
-        primaryType: "ParentStruct",
       });
     });
   });
