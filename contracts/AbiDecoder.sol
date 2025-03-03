@@ -91,12 +91,15 @@ library AbiDecoder {
     }
 
     /**
-     * @dev Recursively walk through the TypeTree to decode a block of parameters.
-     * @param data The encoded transaction data.
-     * @param location The current location of the parameter block being processed.
-     * @param params The current TypeTree node being processed.
-     * @param paramIndex The current Type being processed.
-     * @param result The decoded Payload.
+     * @dev Recursively decodes a block of parameters from transaction data according to a type tree.
+     * @param data The encoded transaction data (calldata for gas efficiency).
+     * @param location The current position in bytes where the parameter block starts.
+     * @param params The array of parameter definitions forming the type tree.
+     * @param paramIndex The index of the current parameter being processed in the params array.
+     * @param result The decoded payload structure where results will be stored.
+     * @notice This function handles two types of blocks:
+     *         1. Array blocks: Length determined by a 32-byte word preceding the data
+     *         2. Struct blocks: Length determined by the number of fields in the parameter
      */
     function __block__(
         bytes calldata data,
@@ -106,6 +109,8 @@ library AbiDecoder {
         AbiPayload memory result
     ) private pure {
         AbiParam calldata param = params[paramIndex];
+
+        // For arrays, the length is stored in the 32 bytes preceding the data
         uint256 blockLength = param._type == AbiType.Array
             ? uint256(word(data, location - 32))
             : param.fields.length;
@@ -115,9 +120,12 @@ library AbiDecoder {
         bool isInline;
         uint256 offset;
         for (uint256 i; i < blockLength; i++) {
-            isInline = (param._type != AbiType.Array || i == 0)
-                ? _isInline(params, param.fields[i])
-                : isInline;
+            if (param._type != AbiType.Array || i == 0) {
+                // For structs or the first element of an array, calculate if element inline
+                // For array elements after the first, they all have the same inline status
+                isInline = _isInline(params, param.fields[i]);
+            }
+
             _walk(
                 data,
                 _locationInBlock(data, location, offset, isInline),
@@ -126,8 +134,13 @@ library AbiDecoder {
                 result.children[i]
             );
 
+            // Update the total size and offset
             uint256 childSize = result.children[i].size;
+
+            // For non-inline elements, we need to account for the 32-byte pointer
             result.size += childSize + (isInline ? 0 : 32);
+
+            // Update the offset in the block for the next element
             offset += isInline ? childSize : 32;
         }
     }
