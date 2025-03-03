@@ -97,13 +97,13 @@ export const encodeTypes = ({
 
   const orderedTypeKeys = [primaryType, ...Object.keys(rest)];
 
-  const referenceType = (type: string): bigint => {
+  const fieldIndex = (type: string): number => {
     const index = orderedTypeKeys.indexOf(type);
     if (index === -1) {
       orderedTypeKeys.push(type);
-      return BigInt(orderedTypeKeys.length - 1);
+      return orderedTypeKeys.length - 1;
     }
-    return BigInt(index);
+    return index;
   };
 
   const mapType = (_type: string): AbiParam => {
@@ -114,7 +114,7 @@ export const encodeTypes = ({
         _type: AbiType.Tuple,
         signature: encodeType({ types, primaryType: type }),
         typeHash: hashType({ types, primaryType: type }) as `0x${string}`,
-        fields: types[type].map((field) => referenceType(field.type)),
+        fields: types[type].map((field) => fieldIndex(field.type)),
       };
     }
 
@@ -123,7 +123,7 @@ export const encodeTypes = ({
         _type: AbiType.Tuple,
         signature: "",
         typeHash: ZeroHash as `0x${string}`,
-        fields: new Array(fixedLength).fill(referenceType(type)),
+        fields: new Array(fixedLength).fill(fieldIndex(type)),
       };
     }
 
@@ -132,7 +132,7 @@ export const encodeTypes = ({
         _type: AbiType.Array,
         signature: "",
         typeHash: ZeroHash as `0x${string}`,
-        fields: [referenceType(type)],
+        fields: [fieldIndex(type)],
       };
     }
 

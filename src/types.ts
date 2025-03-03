@@ -1,4 +1,6 @@
+// should we just use? -> import { ParameterType } from "zodiac-roles-sdk/.";
 export enum AbiType {
+  None,
   Static,
   Dynamic,
   Array,
@@ -7,7 +9,7 @@ export enum AbiType {
 
 export type AbiParam =
   | {
-      _type: Exclude<AbiType, AbiType.Tuple | AbiType.Array>;
+      _type: Exclude<AbiType, AbiType.None | AbiType.Tuple | AbiType.Array>;
       signature: "";
       typeHash: `0x${string}`;
       fields: [];
@@ -16,11 +18,11 @@ export type AbiParam =
       _type: AbiType.Array;
       signature: "";
       typeHash: `0x${string}`;
-      fields: [bigint];
+      fields: [number];
     }
   | {
       _type: AbiType.Tuple;
       signature: string;
       typeHash: `0x${string}`;
-      fields: bigint[];
+      fields: number[];
     };
