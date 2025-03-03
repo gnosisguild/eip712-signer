@@ -2,6 +2,7 @@
 pragma solidity >=0.8.17 <0.9.0;
 
 enum AbiType {
+    None,
     Static,
     Dynamic,
     Array,
@@ -48,16 +49,13 @@ library AbiDecoder {
          *   offset is relative to the start of the block"
          *
          */
-        __block__(
+        _walk(
             encoded.data,
             _isInline(encoded.params, 0) ? 0 : 32,
             encoded.params,
             0,
-            encoded.params[0].fields.length,
-            false,
             result
         );
-        result.typeHash = encoded.params[0].typeHash;
     }
 
     /**
@@ -181,21 +179,6 @@ library AbiDecoder {
         } else {
             return location + uint256(word(data, headLocation));
         }
-    }
-
-    /**
-     * @dev Plucks a slice of bytes from calldata.
-     * @param data The calldata to pluck the slice from.
-     * @param location The starting location of the slice.
-     * @param size The size of the slice.
-     * @return A slice of bytes from calldata.
-     */
-    function pluck(
-        bytes calldata data,
-        uint256 location,
-        uint256 size
-    ) internal pure returns (bytes calldata) {
-        return data[location:location + size];
     }
 
     /**
