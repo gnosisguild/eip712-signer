@@ -23,21 +23,20 @@ struct AbiPayload {
     AbiPayload[] children;
 }
 
-struct AbiEncoded {
-    bytes data;
-    AbiParam[] params;
-}
-
 library AbiDecoder {
     error CalldataOutOfBounds();
 
     /**
      * @dev Maps the location and size of each abo part in the encoded data.
-     * @param encoded The abi encoded data and params.
+     * @param data todo
+     * @param params todo
+     * @param paramIndex todo
      * @return result The mapped location and size of parameters in the encoded transaction data.
      */
     function inspect(
-        AbiEncoded calldata encoded
+        bytes calldata data,
+        AbiParam[] calldata params,
+        uint256 paramIndex
     ) internal pure returns (AbiPayload memory result) {
         /*
          * In the parameter encoding area, there is a region called the head
@@ -50,10 +49,10 @@ library AbiDecoder {
          *
          */
         _walk(
-            encoded.data,
-            _isInline(encoded.params, 0) ? 0 : 32,
-            encoded.params,
-            0,
+            data,
+            _isInline(params, paramIndex) ? 0 : 32,
+            params,
+            paramIndex,
             result
         );
     }
@@ -63,7 +62,8 @@ library AbiDecoder {
      * size within calldata.
      * @param data The encoded transaction data.
      * @param location The current offset within the calldata buffer.
-     * @param params The current node being traversed within the parameter tree.
+     * @param params TODO
+     * @param paramIndex The current node being traversed within the parameter tree.
      * @param result The location and size of the parameter within calldata.
      */
     function _walk(

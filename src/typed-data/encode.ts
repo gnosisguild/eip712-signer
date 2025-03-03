@@ -17,30 +17,25 @@ export const encodeTypedData = ({
   types: Types;
   message: Value;
 }) => {
+  const { data: domainData, types: domainTypes } = encodeTypedDomain({
+    domain,
+  });
+  const { data: messageData, types: messageTypes } = encodeTypedMessage({
+    types,
+    message,
+  });
+
   return {
-    domain: encodeTypedDomain({ domain }),
-    message: {
-      data: encodeTypedValue({ types, value: message }),
-      params: encodeTypes({ types }),
-    },
+    domain: domainData,
+    message: messageData,
+    types: mergeRootTypes(domainTypes, messageTypes),
   };
 };
 
-export const encodeTypedDomain = ({
-  domain,
-}: {
-  domain: TypedDataDomain;
-}): { data: `0x${string}`; params: AbiParam[] } => {
-  // TODO validate
-  // TODO infer field
-  // validateTypedData({ domain, message, primaryType, types });
-
+export const encodeTypedDomain = ({ domain }: { domain: TypedDataDomain }) => {
   const types = { EIP712Domain: typesForDomain(domain) };
 
-  return {
-    data: encodeTypedValue({ types, value: domain }),
-    params: encodeTypes({ types }),
-  };
+  return encodeTypedMessage({ types, message: domain });
 };
 
 export const encodeTypedMessage = ({
@@ -49,10 +44,10 @@ export const encodeTypedMessage = ({
 }: {
   types: Types;
   message: Value;
-}): { data: `0x${string}`; params: AbiParam[] } => {
+}) => {
   return {
     data: encodeTypedValue({ types, value: message }),
-    params: encodeTypes({ types }),
+    types: encodeTypes({ types }),
   };
 };
 
@@ -70,4 +65,23 @@ function typesForDomain(domain: Value): TypedDataField[] {
     },
     domain?.salt && { name: "salt", type: "bytes32" },
   ].filter(Boolean) as TypedDataField[];
+}
+
+function mergeRootTypes(domainTypes: AbiParam[], messageTypes: AbiParam[]) {
+  const shiftBy = (offset: number) => (param: AbiParam) => ({
+    ...param,
+    fields: param.fields.map((f) => f + offset),
+  });
+
+  const [domainFirst, ...domainRest] = domainTypes;
+  const [messageFirst, ...messageRest] = messageTypes;
+  const domainShift = 1;
+  const messageShift = domainTypes.length;
+
+  return [
+    shiftBy(domainShift)(domainFirst),
+    shiftBy(messageShift)(messageFirst),
+    ...domainRest.map(shiftBy(domainShift)),
+    ...messageRest.map(shiftBy(messageShift)),
+  ];
 }

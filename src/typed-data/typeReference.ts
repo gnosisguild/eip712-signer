@@ -20,12 +20,10 @@ export const findPrimaryType = ({ types }: { types: Types }): string => {
     }
   }
 
-  // Find type(s) with references
   const rootReferences = Object.entries(count).filter(
     ([_, count]) => count == 0,
   );
 
-  // Error handling for unexpected cases
   if (rootReferences.length === 0) {
     throw new Error("No primary type found - no referenced types");
   }

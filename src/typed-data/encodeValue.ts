@@ -5,49 +5,49 @@ import { findPrimaryType, parseTypeReference } from "./typeReference";
 type Types = Record<string, Array<TypedDataField>>;
 
 export function encodeTypedValue({
-  types,
   value,
+  types,
 }: {
-  types: Types;
   value: Record<string, any>;
+  types: Types;
 }) {
   const primaryType = findPrimaryType({ types });
 
   return AbiCoder.defaultAbiCoder().encode(
-    [getAbiTypes(types, primaryType)],
-    [getAbiValues(types, value, primaryType)],
+    [abiTypes(primaryType, types)],
+    [abiValues(primaryType, value, types)],
   ) as `0x${string}`;
 }
 
-function getAbiTypes(types: Types, typeName: string): string {
-  const { type, isArray, isStruct, fixedLength } = parseTypeReference(typeName);
+function abiTypes(typeReference: string, types: Types): string {
+  const { type, isArray, isStruct, fixedLength } =
+    parseTypeReference(typeReference);
 
   if (isStruct) {
     const fields = types[type];
     return `tuple(${fields
-      .map(({ type }) => getAbiTypes(types, type))
+      .map(({ type }) => abiTypes(type, types))
       .join(",")})`;
   } else if (isArray && !fixedLength) {
-    return `${getAbiTypes(types, type)}[]`;
+    return `${abiTypes(type, types)}[]`;
   } else if (isArray && fixedLength) {
     return `tuple(${new Array(fixedLength)
-      .fill(getAbiTypes(types, type))
+      .fill(abiTypes(type, types))
       .join(",")})`;
   } else {
     return type;
   }
 }
 
-function getAbiValues(types: Types, value: any, typeReference: string): any[] {
+function abiValues(typeReference: string, value: any, types: Types): any[] {
   const { type, isArray, isStruct } = parseTypeReference(typeReference);
 
   if (isStruct) {
-    const fields = types[type];
-    return fields.map(({ name, type }) =>
-      getAbiValues(types, value[name], type),
+    return types[type].map((field) =>
+      abiValues(field.type, value[field.name], types),
     );
   } else if (isArray) {
-    return value.map((v: string) => getAbiValues(types, v, type));
+    return value.map((v: string) => abiValues(type, v, types));
   } else {
     return value;
   }

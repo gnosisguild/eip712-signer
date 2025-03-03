@@ -3,13 +3,20 @@ pragma solidity >=0.8.21;
 
 import "./AbiDecoder.sol";
 
-contract EIP712Encoder {
+contract EIP712Hasher {
     function hash(
-        AbiEncoded calldata domain,
-        AbiEncoded calldata message
+        bytes calldata domain,
+        bytes calldata message,
+        AbiParam[] calldata types
     ) public pure returns (bytes32 result) {
-        bytes32 domainHash = hashStruct(domain);
-        bytes32 messageHash = hashStruct(message);
+        bytes32 domainHash = _hashBlock(
+            domain,
+            AbiDecoder.inspect(domain, types, 0)
+        );
+        bytes32 messageHash = _hashBlock(
+            message,
+            AbiDecoder.inspect(message, types, 1)
+        );
 
         assembly {
             let ptr := mload(0x40)
@@ -20,16 +27,11 @@ contract EIP712Encoder {
         }
     }
 
-    function hashDomain(
-        AbiEncoded calldata domain
-    ) public pure returns (bytes32) {
-        return _hashBlock(domain.data, AbiDecoder.inspect(domain));
-    }
-
     function hashStruct(
-        AbiEncoded calldata value
+        bytes calldata data,
+        AbiParam[] calldata types
     ) public pure returns (bytes32) {
-        return _hashBlock(value.data, AbiDecoder.inspect(value));
+        return _hashBlock(data, AbiDecoder.inspect(data, types, 0));
     }
 
     function _hashBlock(
