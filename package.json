@@ -78,7 +78,6 @@
   },
   "dependencies": {
     "abitype": "^1.0.7",
-    "viem": "^2.21.54",
     "zodiac-roles-sdk": "^2.19.0"
   },
   "packageManager": "bun@1.1.12"
