@@ -3,12 +3,12 @@ import { expect } from "chai";
 import { TypedDataEncoder, keccak256, toUtf8Bytes } from "ethers";
 
 import { encodeTypedDomain } from "../../src/typed-data";
-import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
+import { deployEIP712Hasher } from "../EIP712Hasher.fixture";
 
-describe("EIP7127Encoder", () => {
+describe("EIP7127Hasher", () => {
   describe("hashDomainSeparator()", () => {
     it("should hash the domain separator with all required fields", async () => {
-      const { encoder } = await loadFixture(deployEIP712Encoder);
+      const { encoder } = await loadFixture(deployEIP712Hasher);
 
       const domain = {
         name: "Ether Mail",
@@ -19,15 +19,15 @@ describe("EIP7127Encoder", () => {
         salt: keccak256(toUtf8Bytes("Hello World")) as `0x${string}`,
       };
 
-      const _domain = encodeTypedDomain({ domain });
+      const { data, types } = encodeTypedDomain({ domain });
 
-      expect(await encoder.hashDomain(_domain)).to.equal(
+      expect(await encoder.hashStruct(data, types)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
     });
 
     it("should handle custom salt usage in the domain separator", async () => {
-      const { encoder } = await loadFixture(deployEIP712Encoder);
+      const { encoder } = await loadFixture(deployEIP712Hasher);
 
       const domain = {
         chainId: 35377,
@@ -36,9 +36,9 @@ describe("EIP7127Encoder", () => {
         salt: keccak256(toUtf8Bytes("Here is a custom salt")) as `0x${string}`,
       };
 
-      const _domain = encodeTypedDomain({ domain });
+      const { data, types } = encodeTypedDomain({ domain });
 
-      expect(await encoder.hashDomain(_domain)).to.equal(
+      expect(await encoder.hashStruct(data, types)).to.equal(
         TypedDataEncoder.hashDomain(domain),
       );
     });

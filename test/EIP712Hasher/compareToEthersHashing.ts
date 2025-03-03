@@ -3,8 +3,8 @@ import { TypedDataDomain } from "abitype";
 import { expect } from "chai";
 import { TypedDataEncoder, TypedDataField } from "ethers";
 
-import { encodeTypedDomain, encodeTypedMessage } from "../../src/typed-data";
-import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
+import { encodeTypedData } from "../../src/typed-data";
+import { deployEIP712Hasher } from "../EIP712Hasher.fixture";
 
 type Value = Record<string, any>;
 type Types = Record<string, Array<TypedDataField>>;
@@ -18,12 +18,15 @@ export async function compareToEthersHashing({
   types: Types;
   message: Value;
 }) {
-  const { encoder } = await loadFixture(deployEIP712Encoder);
+  const { encoder } = await loadFixture(deployEIP712Hasher);
 
-  const _domain = encodeTypedDomain({ domain });
-  const _message = encodeTypedMessage({ types, message });
+  const {
+    domain: _domain,
+    message: _message,
+    types: _types,
+  } = encodeTypedData({ domain, types, message });
 
-  expect(await encoder.hash(_domain, _message)).to.equal(
+  expect(await encoder.hash(_domain, _message, _types)).to.equal(
     TypedDataEncoder.hash(domain, types, message),
   );
 }

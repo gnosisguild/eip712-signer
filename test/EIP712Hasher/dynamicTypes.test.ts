@@ -1,6 +1,6 @@
 import { compareToEthersHashing } from "./compareToEthersHashing";
 
-describe("EIP7127Encoder", () => {
+describe("EIP7127Hasher", () => {
   describe("Dynamic Types", () => {
     it("should handle a struct with dynamic types (string, bytes)", async () => {
       const domain = {

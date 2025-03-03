@@ -1,4 +1,4 @@
-describe("EIP712Encoder", () => {
+describe("EIP712Hasher", () => {
   describe("Edge Cases", () => {
     describe("validation", () => {
       it.skip("should reject invalid struct definitions");

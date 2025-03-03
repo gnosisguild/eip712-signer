@@ -1,6 +1,6 @@
 import { compareToEthersHashing } from "./compareToEthersHashing";
 
-describe("EIP7127Encoder", () => {
+describe("EIP7127Hasher", () => {
   describe("Array Types", () => {
     it("should hash a struct with arrays of atomic types (fixed length)", async () => {
       const domain = {
@@ -22,7 +22,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "PersonWithArrays",
       });
     });
 
@@ -46,7 +45,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Person",
       });
     });
 
@@ -113,7 +111,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Mail",
       });
     });
 
@@ -204,7 +201,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Article",
       });
     });
 
@@ -321,7 +317,6 @@ describe("EIP7127Encoder", () => {
         domain,
         types,
         message,
-        primaryType: "Document",
       });
     });
   });
