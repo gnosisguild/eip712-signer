@@ -1,28 +1,13 @@
-import { TypedDataField, keccak256, toUtf8Bytes } from "ethers";
+import { TypedDataField } from "ethers";
 
-export function hashType({
-  primaryType,
-  types,
-}: {
-  primaryType: string;
-  types: Record<string, TypedDataField[]>;
-}) {
-  const encodedHashType = toUtf8Bytes(encodeType({ primaryType, types }));
-  return keccak256(encodedHashType);
-}
+type Types = Record<string, Array<TypedDataField>>;
 
-export function encodeType({
-  primaryType,
-  types,
-}: {
-  primaryType: string;
-  types: Record<string, TypedDataField[]>;
-}) {
+export function describeType({ types, type }: { types: Types; type: string }) {
   let result = "";
-  const unsortedDeps = findTypeDependencies({ primaryType, types });
-  unsortedDeps.delete(primaryType);
+  const unsortedDeps = findTypeDependencies({ types, primaryType: type });
+  unsortedDeps.delete(type);
 
-  const deps = [primaryType, ...Array.from(unsortedDeps).sort()];
+  const deps = [type, ...Array.from(unsortedDeps).sort()];
   for (const type of deps) {
     result += `${type}(${types[type]
       .map(({ name, type: t }) => `${t} ${name}`)
