@@ -8,48 +8,48 @@ contract EIP712Encoder {
         AbiEncoded calldata domain,
         AbiEncoded calldata message
     ) public pure returns (bytes32 result) {
-        return _hashTypedData(hashStruct(domain), hashStruct(message));
+        bytes32 domainHash = hashStruct(domain);
+        bytes32 messageHash = hashStruct(message);
+
+        assembly {
+            let ptr := mload(0x40)
+            mstore(ptr, hex"19_01")
+            mstore(add(ptr, 0x02), domainHash)
+            mstore(add(ptr, 0x22), messageHash)
+            result := keccak256(ptr, 0x42)
+        }
     }
 
     function hashDomain(
         AbiEncoded calldata domain
     ) public pure returns (bytes32) {
-        return _hashFields(domain.data, AbiDecoder.inspect(domain));
+        return _hashBlock(domain.data, AbiDecoder.inspect(domain));
     }
 
     function hashStruct(
         AbiEncoded calldata value
     ) public pure returns (bytes32) {
-        return _hashFields(value.data, AbiDecoder.inspect(value));
+        return _hashBlock(value.data, AbiDecoder.inspect(value));
     }
 
-    function _hashFields(
-        bytes calldata value,
+    function _hashBlock(
+        bytes calldata data,
         AbiPayload memory payload
     ) internal pure returns (bytes32) {
         bytes32[] memory result = new bytes32[](payload.children.length);
         for (uint256 i = 0; i < payload.children.length; i++) {
-            result[i] = _field(value, payload.children[i]);
+            result[i] = _encodeField(data, payload.children[i]);
         }
 
         return
-            payload.typeHash != bytes32(0)
-                ? keccak256(abi.encodePacked(payload.typeHash, result))
-                : keccak256(abi.encodePacked(result));
+            keccak256(
+                payload.typeHash != bytes32(0)
+                    ? abi.encodePacked(payload.typeHash, result)
+                    : abi.encodePacked(result)
+            );
     }
 
-    function _hashDynamic(
-        bytes calldata value,
-        AbiPayload memory payload
-    ) private pure returns (bytes32) {
-        (uint256 location, uint256 length) = (
-            payload.location + 32,
-            uint256(AbiDecoder.word(value, payload.location))
-        );
-        return keccak256(AbiDecoder.pluck(value, location, length));
-    }
-
-    function _field(
+    function _encodeField(
         bytes calldata data,
         AbiPayload memory payload
     ) internal pure returns (bytes32) {
@@ -58,21 +58,16 @@ contract EIP712Encoder {
         } else if (payload._type == AbiType.Dynamic) {
             return _hashDynamic(data, payload);
         } else {
-            return _hashFields(data, payload);
+            return _hashBlock(data, payload);
         }
     }
 
-    function _hashTypedData(
-        bytes32 domainHash,
-        bytes32 messageHash
-    ) internal pure returns (bytes32 digest) {
-        /// @solidity memory-safe-assembly
-        assembly {
-            let ptr := mload(0x40)
-            mstore(ptr, hex"19_01")
-            mstore(add(ptr, 0x02), domainHash)
-            mstore(add(ptr, 0x22), messageHash)
-            digest := keccak256(ptr, 0x42)
-        }
+    function _hashDynamic(
+        bytes calldata data,
+        AbiPayload memory payload
+    ) private pure returns (bytes32) {
+        uint256 left = payload.location + 32;
+        uint256 length = uint256(AbiDecoder.word(data, payload.location));
+        return keccak256(data[left:left + length]);
     }
 }
