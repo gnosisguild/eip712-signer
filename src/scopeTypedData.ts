@@ -36,9 +36,16 @@ export const scopeTypedData = ({
       throw new Error(`Expected Array condition for type ${type}`);
     }
     if (
-      ![Operator.ArrayEvery, Operator.ArraySome, Operator.ArraySubset, Operator.Matches].includes(condition.operator)
+      ![
+        Operator.ArrayEvery,
+        Operator.ArraySome,
+        Operator.ArraySubset,
+        Operator.Matches,
+      ].includes(condition.operator)
     ) {
-      throw new Error(`Only supporting ArrayEvery, ArraySome, ArraySubset, Matches operators for array types`);
+      throw new Error(
+        `Only supporting ArrayEvery, ArraySome, ArraySubset, Matches operators for array types`,
+      );
     }
 
     const elementType = type.split("[")[0];
@@ -46,7 +53,9 @@ export const scopeTypedData = ({
       [
         {
           ...condition,
-          children: condition.children?.map((child) => scopeTypedData({ condition: child, types, type: elementType })),
+          children: condition.children?.map((child) =>
+            scopeTypedData({ condition: child, types, type: elementType }),
+          ),
         },
       ],
       ["bytes[]"],
@@ -68,7 +77,11 @@ export const scopeTypedData = ({
       [
         structFields.map(({ type }, index) =>
           condition.children && !!condition.children[index]
-            ? scopeTypedData({ condition: condition.children[index], types, type })
+            ? scopeTypedData({
+                condition: condition.children[index],
+                types,
+                type,
+              })
             : undefined,
         ),
       ],

@@ -13,7 +13,7 @@ overrides:
     options:
       compiler: "0.8.17"
       parser: "solidity-parse"
-      tabWidth: 4
+      tabWidth: 2
   - files: "*.ts"
     options:
       importOrder: ["<THIRD_PARTY_MODULES>", "^[./]"]
