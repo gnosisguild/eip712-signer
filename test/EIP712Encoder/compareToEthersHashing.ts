@@ -3,10 +3,7 @@ import { TypedDataDomain } from "abitype";
 import { expect } from "chai";
 import { TypedDataEncoder, TypedDataField } from "ethers";
 
-import {
-  encodeTypedDomain,
-  encodeTypedMessage,
-} from "../../src/typed-data/encode";
+import { encodeTypedDomain, encodeTypedMessage } from "../../src/typed-data";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
 type Value = Record<string, any>;

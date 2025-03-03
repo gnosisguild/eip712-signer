@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { TypedDataEncoder, keccak256, toUtf8Bytes } from "ethers";
 
-import { encodeTypedDomain } from "../../src/typed-data/encode";
+import { encodeTypedDomain } from "../../src/typed-data";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
 describe("EIP7127Encoder", () => {

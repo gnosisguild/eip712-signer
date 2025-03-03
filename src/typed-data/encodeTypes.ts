@@ -7,68 +7,73 @@ import { AbiParam, AbiType } from "./types";
 type Types = Record<string, Array<TypedDataField>>;
 
 export const encodeTypes = ({ types }: { types: Types }): AbiParam[] => {
-  const primaryType = findPrimaryType({ types });
+  return allTypeReferences({ types }).map(
+    (
+      typeReference: string,
+      _: number,
+      allTypeReferences: string[],
+    ): AbiParam => {
+      const { isArray, isStruct, type, fixedLength } =
+        parseTypeReference(typeReference);
 
-  const { [primaryType]: _1, ...rest } = types;
+      if (isStruct) {
+        const signature = describeType({ types, type });
+        return {
+          _type: AbiType.Tuple,
+          signature,
+          typeHash: keccak256(toUtf8Bytes(signature)) as `0x${string}`,
+          fields: types[type].map((field) =>
+            allTypeReferences.indexOf(field.type),
+          ),
+        };
+      }
 
-  const orderedTypeKeys = [primaryType, ...Object.keys(rest)];
+      if (isArray && fixedLength) {
+        return {
+          _type: AbiType.Tuple,
+          signature: "",
+          typeHash: ZeroHash as `0x${string}`,
+          fields: new Array(fixedLength).fill(allTypeReferences.indexOf(type)),
+        };
+      }
 
-  const fieldIndex = (type: string): number => {
-    const index = orderedTypeKeys.indexOf(type);
-    if (index === -1) {
-      orderedTypeKeys.push(type);
-      return orderedTypeKeys.length - 1;
-    }
-    return index;
-  };
+      if (isArray && !fixedLength) {
+        return {
+          _type: AbiType.Array,
+          signature: "",
+          typeHash: ZeroHash as `0x${string}`,
+          fields: [allTypeReferences.indexOf(type)],
+        };
+      }
 
-  const mapType = (typeReference: string): AbiParam => {
-    const { isArray, isStruct, type, fixedLength } =
-      parseTypeReference(typeReference);
-
-    if (isStruct) {
-      const signature = describeType({ types, type });
+      // basic type
       return {
-        _type: AbiType.Tuple,
-        signature,
-        typeHash: keccak256(toUtf8Bytes(signature)) as `0x${string}`,
-        fields: types[type].map((field) => fieldIndex(field.type)),
-      };
-    }
-
-    if (isArray && fixedLength) {
-      return {
-        _type: AbiType.Tuple,
+        _type: isAtomic(type) ? AbiType.Static : AbiType.Dynamic,
         signature: "",
         typeHash: ZeroHash as `0x${string}`,
-        fields: new Array(fixedLength).fill(fieldIndex(type)),
+        fields: [],
       };
-    }
-
-    if (isArray && !fixedLength) {
-      return {
-        _type: AbiType.Array,
-        signature: "",
-        typeHash: ZeroHash as `0x${string}`,
-        fields: [fieldIndex(type)],
-      };
-    }
-
-    // basic type
-    return {
-      _type: isAtomic(type) ? AbiType.Static : AbiType.Dynamic,
-      signature: "",
-      typeHash: ZeroHash as `0x${string}`,
-      fields: [],
-    };
-  };
-
-  const result = [];
-  let index = 0;
-  while (orderedTypeKeys[index]) {
-    result.push(mapType(orderedTypeKeys[index]));
-    index++;
-  }
-
-  return result;
+    },
+  );
 };
+
+function allTypeReferences({ types }: { types: Types }) {
+  const result: string[] = [];
+
+  const collect = (typeReference: string) => {
+    typeReference = typeReference || findPrimaryType({ types });
+    if (result.indexOf(typeReference) !== -1) {
+      return;
+    }
+    result.push(typeReference);
+
+    const { type } = parseTypeReference(typeReference);
+    collect(type);
+    for (const field of types[type] || []) {
+      collect(field.type);
+    }
+  };
+
+  collect(findPrimaryType({ types }));
+  return result;
+}
