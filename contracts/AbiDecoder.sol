@@ -80,28 +80,10 @@ library AbiDecoder {
         } else if (_type == AbiType.Dynamic) {
             result.size = 32 + _ceil32(uint256(word(data, location)));
         } else if (_type == AbiType.Tuple) {
-            __block__(
-                data,
-                location,
-                params,
-                paramIndex,
-                params[paramIndex].fields.length,
-                false,
-                result
-            );
+            __block__(data, location, params, paramIndex, result);
             result.typeHash = params[paramIndex].typeHash;
         } else {
-            // Array
-            __block__(
-                data,
-                location + 32,
-                params,
-                paramIndex,
-                uint256(word(data, location)),
-                true,
-                result
-            );
-            result.size += 32;
+            __block__(data, location + 32, params, paramIndex, result);
         }
 
         result._type = _type;
@@ -114,8 +96,6 @@ library AbiDecoder {
      * @param location The current location of the parameter block being processed.
      * @param params The current TypeTree node being processed.
      * @param paramIndex The current Type being processed.
-     * @param blockLength The number of parts in the block.
-     * @param template whether first child is type descriptor for all parts.
      * @param result The decoded Payload.
      */
     function __block__(
@@ -123,35 +103,32 @@ library AbiDecoder {
         uint256 location,
         AbiParam[] calldata params,
         uint256 paramIndex,
-        uint256 blockLength,
-        bool template,
         AbiPayload memory result
     ) private pure {
+        AbiParam calldata param = params[paramIndex];
+        uint256 blockLength = param._type == AbiType.Array
+            ? uint256(word(data, location - 32))
+            : param.fields.length;
+
         result.children = new AbiPayload[](blockLength);
+
         bool isInline;
-        if (template)
-            isInline = _isInline(params, params[paramIndex].fields[0]);
-
         uint256 offset;
-        for (uint256 i; i < blockLength; ) {
-            if (!template)
-                isInline = _isInline(params, params[paramIndex].fields[i]);
-
+        for (uint256 i; i < blockLength; i++) {
+            isInline = (param._type != AbiType.Array || i == 0)
+                ? _isInline(params, param.fields[i])
+                : isInline;
             _walk(
                 data,
                 _locationInBlock(data, location, offset, isInline),
                 params,
-                params[paramIndex].fields[template ? 0 : i],
+                param.fields[param._type == AbiType.Array ? 0 : i],
                 result.children[i]
             );
 
             uint256 childSize = result.children[i].size;
-            result.size += isInline ? childSize : childSize + 32;
+            result.size += childSize + (isInline ? 0 : 32);
             offset += isInline ? childSize : 32;
-
-            unchecked {
-                ++i;
-            }
         }
     }
 
