@@ -1,6 +1,7 @@
 import { AbiCoder, TypedDataField } from "ethers";
 
-import { findPrimaryType, isAtomic, parseTypeReference } from "./typeReference";
+import { findPrimaryType } from "./findPrimaryType";
+import { isAtomic, parseTypeReference } from "./typeReference";
 
 type Types = Record<string, Array<TypedDataField>>;
 

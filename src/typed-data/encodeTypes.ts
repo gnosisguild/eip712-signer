@@ -1,18 +1,18 @@
 import { TypedDataField, ZeroHash, keccak256, toUtf8Bytes } from "ethers";
 
 import { describeType } from "./describeType";
-import { findPrimaryType, isAtomic, parseTypeReference } from "./typeReference";
+import {
+  collectTypeReferences,
+  isAtomic,
+  parseTypeReference,
+} from "./typeReference";
 import { AbiParam, AbiType } from "./types";
 
 type Types = Record<string, Array<TypedDataField>>;
 
 export const encodeTypes = ({ types }: { types: Types }): AbiParam[] => {
-  return allTypeReferences({ types }).map(
-    (
-      typeReference: string,
-      _: number,
-      allTypeReferences: string[],
-    ): AbiParam => {
+  return collectTypeReferences({ types }).map(
+    (typeReference: string, _: number, allTypeReferences: string[]) => {
       const { isArray, isStruct, type, fixedLength } =
         parseTypeReference(typeReference);
 
@@ -46,7 +46,6 @@ export const encodeTypes = ({ types }: { types: Types }): AbiParam[] => {
         };
       }
 
-      // basic type
       return {
         _type: isAtomic(type) ? AbiType.Static : AbiType.Dynamic,
         signature: "",
@@ -56,24 +55,3 @@ export const encodeTypes = ({ types }: { types: Types }): AbiParam[] => {
     },
   );
 };
-
-function allTypeReferences({ types }: { types: Types }) {
-  const result: string[] = [];
-
-  const collect = (typeReference: string) => {
-    typeReference = typeReference || findPrimaryType({ types });
-    if (result.indexOf(typeReference) !== -1) {
-      return;
-    }
-    result.push(typeReference);
-
-    const { type } = parseTypeReference(typeReference);
-    collect(type);
-    for (const field of types[type] || []) {
-      collect(field.type);
-    }
-  };
-
-  collect(findPrimaryType({ types }));
-  return result;
-}
