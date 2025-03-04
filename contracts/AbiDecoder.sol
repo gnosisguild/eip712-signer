@@ -72,7 +72,7 @@ library AbiDecoder {
     if (_type == AbiType.Static) {
       result.size = 32;
     } else if (_type == AbiType.Dynamic) {
-      result.size = 32 + _ceil32(uint256(word(data, location)));
+      result.size = 32 + _ceil32(_lengthAt(data, location));
     } else if (_type == AbiType.Tuple) {
       __block__(data, location, params, paramIndex, result);
       result.typeHash = params[paramIndex].typeHash;
@@ -105,7 +105,7 @@ library AbiDecoder {
 
     // For arrays, the length is stored in the 32 bytes preceding the data
     uint256 blockLength = param._type == AbiType.Array
-      ? uint256(word(data, location - 32))
+      ? _lengthAt(data, location - 32)
       : param.fields.length;
 
     result.children = new AbiPayload[](blockLength);
@@ -160,8 +160,35 @@ library AbiDecoder {
     if (isInline) {
       return headLocation;
     } else {
-      return location + uint256(word(data, headLocation));
+      return location + _lengthAt(data, headLocation);
     }
+  }
+
+  /**
+   * @dev Recursively traverses the ABI parameter tree to check if the parameter
+   * is inline. A parameter is inline if it's either a static type or a tuple
+   * comprised solely of static types. Arrays and dynamic types break the inline
+   * chain.
+   * @param params Array of ABI parameters.
+   * @param paramIndex Index of the parameter to start traversing.
+   * @return bool True if the parameter is inline, false otherwise.
+   */
+  function _isInline(
+    AbiParam[] calldata params,
+    uint256 paramIndex
+  ) private pure returns (bool) {
+    AbiParam calldata param = params[paramIndex];
+
+    if (param._type == AbiType.Tuple) {
+      for (uint256 i; i < param.fields.length; ++i) {
+        if (!_isInline(params, param.fields[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    return param._type == AbiType.Static;
   }
 
   /**
@@ -170,10 +197,10 @@ library AbiDecoder {
    * @param location The starting location of the slice.
    * @return result 32 byte word from calldata.
    */
-  function word(
+  function _lengthAt(
     bytes calldata data,
     uint256 location
-  ) internal pure returns (bytes32 result) {
+  ) private pure returns (uint256 result) {
     if (location + 32 > data.length) {
       revert CalldataOutOfBounds();
     }
@@ -185,25 +212,5 @@ library AbiDecoder {
   function _ceil32(uint256 size) private pure returns (uint256) {
     // pad size. Source: http://www.cs.nott.ac.uk/~psarb2/G51MPC/slides/NumberLogic.pdf
     return ((size + 32 - 1) / 32) * 32;
-  }
-
-  function _isInline(
-    AbiParam[] calldata params,
-    uint256 index
-  ) internal pure returns (bool) {
-    AbiParam calldata param = params[index];
-
-    if (param._type == AbiType.Static) {
-      return true;
-    } else if (param._type == AbiType.Tuple) {
-      for (uint256 i; i < param.fields.length; ++i) {
-        if (!_isInline(params, param.fields[i])) {
-          return false;
-        }
-      }
-      return true;
-    } else {
-      return false;
-    }
   }
 }
