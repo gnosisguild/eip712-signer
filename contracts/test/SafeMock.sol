@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import "@safe-global/safe-contracts/contracts/libraries/SafeStorage.sol";
+import "../SafeStorage.sol";
 
 contract SafeMock is SafeStorage {
   receive() external payable {}
