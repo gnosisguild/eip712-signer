@@ -9,19 +9,14 @@ contract EIP712Encoder {
     bytes calldata message,
     AbiParam[] calldata types
   ) public pure returns (bytes32 result) {
-    bytes32 domainHash = _hashBlock(
-      domain,
-      AbiDecoder.inspect(domain, types, 0)
+    (bytes32 domainSeparator, bytes32 messageHash) = (
+      _hashBlock(domain, AbiDecoder.inspect(domain, types, 0)),
+      _hashBlock(message, AbiDecoder.inspect(message, types, 1))
     );
-    bytes32 messageHash = _hashBlock(
-      message,
-      AbiDecoder.inspect(message, types, 1)
-    );
-
     assembly {
       let ptr := mload(0x40)
-      mstore(ptr, hex"19_01")
-      mstore(add(ptr, 0x02), domainHash)
+      mstore(ptr, hex"1901")
+      mstore(add(ptr, 0x02), domainSeparator)
       mstore(add(ptr, 0x22), messageHash)
       result := keccak256(ptr, 0x42)
     }
