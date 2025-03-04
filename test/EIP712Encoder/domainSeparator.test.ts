@@ -3,12 +3,12 @@ import { expect } from "chai";
 import { TypedDataEncoder, keccak256, toUtf8Bytes } from "ethers";
 
 import { encodeTypedDomain } from "../../src/typed-data";
-import { deployEIP712Hasher } from "../EIP712Hasher.fixture";
+import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
-describe("EIP7127Hasher", () => {
+describe("EIP712Encoder", () => {
   describe("hashDomainSeparator()", () => {
     it("should hash the domain separator with all required fields", async () => {
-      const { encoder } = await loadFixture(deployEIP712Hasher);
+      const { encoder } = await loadFixture(deployEIP712Encoder);
 
       const domain = {
         name: "Ether Mail",
@@ -27,7 +27,7 @@ describe("EIP7127Hasher", () => {
     });
 
     it("should handle custom salt usage in the domain separator", async () => {
-      const { encoder } = await loadFixture(deployEIP712Hasher);
+      const { encoder } = await loadFixture(deployEIP712Encoder);
 
       const domain = {
         chainId: 35377,

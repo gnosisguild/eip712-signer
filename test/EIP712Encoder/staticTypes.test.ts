@@ -1,6 +1,6 @@
 import { compareToEthersHashing } from "./compareToEthersHashing";
 
-describe("EIP7127Hasher", () => {
+describe("EIP712Encoder", () => {
   describe("Static Types", () => {
     const domain = { chainId: 1 };
 

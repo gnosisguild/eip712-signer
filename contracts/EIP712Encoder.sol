@@ -3,8 +3,8 @@ pragma solidity >=0.8.21;
 
 import "./AbiDecoder.sol";
 
-contract EIP712Hasher {
-  function hash(
+contract EIP712Encoder {
+  function hashTypedData(
     bytes calldata domain,
     bytes calldata message,
     AbiParam[] calldata types
@@ -37,7 +37,7 @@ contract EIP712Hasher {
   function _hashBlock(
     bytes calldata data,
     AbiPayload memory payload
-  ) internal pure returns (bytes32) {
+  ) private pure returns (bytes32) {
     bytes32[] memory result = new bytes32[](payload.children.length);
     for (uint256 i = 0; i < payload.children.length; i++) {
       result[i] = _encodeField(data, payload.children[i]);
@@ -54,7 +54,7 @@ contract EIP712Hasher {
   function _encodeField(
     bytes calldata data,
     AbiPayload memory payload
-  ) internal pure returns (bytes32) {
+  ) private pure returns (bytes32) {
     if (payload._type == AbiType.Static) {
       return AbiDecoder.word(data, payload.location);
     } else if (payload._type == AbiType.Dynamic) {
