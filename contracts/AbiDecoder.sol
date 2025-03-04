@@ -72,7 +72,7 @@ library AbiDecoder {
     if (_type == AbiType.Static) {
       result.size = 32;
     } else if (_type == AbiType.Dynamic) {
-      result.size = 32 + _ceil32(_lengthAt(data, location));
+      result.size = 32 + _ceil32(_uint256At(data, location));
     } else if (_type == AbiType.Tuple) {
       __block__(data, location, params, paramIndex, result);
       result.typeHash = params[paramIndex].typeHash;
@@ -105,7 +105,7 @@ library AbiDecoder {
 
     // For arrays, the length is stored in the 32 bytes preceding the data
     uint256 blockLength = param._type == AbiType.Array
-      ? _lengthAt(data, location - 32)
+      ? _uint256At(data, location - 32)
       : param.fields.length;
 
     result.children = new AbiPayload[](blockLength);
@@ -139,16 +139,15 @@ library AbiDecoder {
   }
 
   /**
-   * @dev Returns the location of a block part, which may be located inline
-   * within the block - at the HEAD - or at an offset relative to the start
-   * of the block - at the TAIL.
+   * @dev Returns the location of a block chunk, which can be either inline in
+   * the HEAD region or at an offset in the TAIL region.
    *
-   * @param data The encoded transaction data.
-   * @param location The location of the block within the calldata buffer.
-   * @param offset The offset of the block part, relative to the start of the block.
-   * @param isInline Whether the block part is located inline within the block.
+   * @param data The encoded transaction calldata
+   * @param location absolute location, points to the start of HEAD region
+   * @param offset relative offset of the chunk within the HEAD region
+   * @param isInline Whether chunk is encoded inline within HEAD or at the TAIL
    *
-   * @return The location of the block part within the calldata buffer.
+   * @return The absolute location of the block chunk
    */
   function _locationInBlock(
     bytes calldata data,
@@ -156,11 +155,10 @@ library AbiDecoder {
     uint256 offset,
     bool isInline
   ) private pure returns (uint256) {
-    uint256 headLocation = location + offset;
     if (isInline) {
-      return headLocation;
+      return location + offset;
     } else {
-      return location + _lengthAt(data, headLocation);
+      return location + _uint256At(data, location + offset);
     }
   }
 
@@ -197,7 +195,7 @@ library AbiDecoder {
    * @param location The starting location of the slice.
    * @return result 32 byte word from calldata.
    */
-  function _lengthAt(
+  function _uint256At(
     bytes calldata data,
     uint256 location
   ) private pure returns (uint256 result) {
