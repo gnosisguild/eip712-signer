@@ -31,40 +31,40 @@ contract EIP712Encoder {
 
   function _hashBlock(
     bytes calldata data,
-    AbiPayload memory payload
+    AbiPayload memory _block
   ) private pure returns (bytes32) {
-    bytes32[] memory result = new bytes32[](payload.children.length);
-    for (uint256 i = 0; i < payload.children.length; i++) {
-      result[i] = _encodeField(data, payload.children[i]);
+    bytes32[] memory result = new bytes32[](_block.children.length);
+    for (uint256 i = 0; i < _block.children.length; i++) {
+      result[i] = _encodeField(data, _block.children[i]);
     }
 
     return
       keccak256(
-        payload.typeHash != bytes32(0)
-          ? abi.encodePacked(payload.typeHash, result)
+        _block.typeHash != bytes32(0)
+          ? abi.encodePacked(_block.typeHash, result)
           : abi.encodePacked(result)
       );
   }
 
-  function _encodeField(
-    bytes calldata data,
-    AbiPayload memory payload
-  ) private pure returns (bytes32) {
-    if (payload._type == AbiType.Static) {
-      return AbiDecoder.word(data, payload.location);
-    } else if (payload._type == AbiType.Dynamic) {
-      return _hashDynamic(data, payload);
-    } else {
-      return _hashBlock(data, payload);
-    }
-  }
-
   function _hashDynamic(
     bytes calldata data,
-    AbiPayload memory payload
+    AbiPayload memory dynamic
   ) private pure returns (bytes32) {
-    uint256 left = payload.location + 32;
-    uint256 length = uint256(AbiDecoder.word(data, payload.location));
+    uint256 left = dynamic.location + 32;
+    uint256 length = uint256(bytes32(data[dynamic.location:]));
     return keccak256(data[left:left + length]);
+  }
+
+  function _encodeField(
+    bytes calldata data,
+    AbiPayload memory field
+  ) private pure returns (bytes32) {
+    if (field._type == AbiType.Static) {
+      return bytes32(data[field.location:]);
+    } else if (field._type == AbiType.Dynamic) {
+      return _hashDynamic(data, field);
+    } else {
+      return _hashBlock(data, field);
+    }
   }
 }
