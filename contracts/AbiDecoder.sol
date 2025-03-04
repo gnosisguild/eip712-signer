@@ -28,9 +28,9 @@ library AbiDecoder {
 
   /**
    * @dev Maps the location and size of each abo part in the encoded data.
-   * @param data todo
-   * @param params todo
-   * @param paramIndex todo
+   * @param data TODO
+   * @param params TODO
+   * @param paramIndex TODO
    * @return result The mapped location and size of parameters in the encoded transaction data.
    */
   function inspect(
@@ -38,23 +38,17 @@ library AbiDecoder {
     AbiParam[] calldata params,
     uint256 paramIndex
   ) internal pure returns (AbiPayload memory result) {
+    require(params[paramIndex]._type == AbiType.Tuple);
     /*
-     * In the parameter encoding area, there is a region called the head
-     * that is divided into 32-byte chunks. Each parameter has its own
-     * corresponding chunk in the head region:
+     * The parameter encoding area contains a head region, divided into
+     * 32-byte chunks. Each parameter occupies one chunk in head:
      * - Static parameters are encoded inline.
-     * - Dynamic parameters have an offset to the tail, which is the start
-     *   of the actual encoding for the dynamic parameter. Note that the
-     *   offset is relative to the start of the block"
-     *
+     * - Dynamic parameters store an offset pointing to the tail region,
+     *   where the actual encoded data resides. Note the offset is relative
+     *   to the start of each block, and not to the start of the buffer
      */
-    _walk(
-      data,
-      _isInline(params, paramIndex) ? 0 : 32,
-      params,
-      paramIndex,
-      result
-    );
+    __block__(data, 0, params, paramIndex, result);
+    result.typeHash = params[paramIndex].typeHash;
   }
 
   /**
@@ -85,8 +79,7 @@ library AbiDecoder {
     } else {
       __block__(data, location + 32, params, paramIndex, result);
     }
-
-    result._type = _type;
+    result._type = params[paramIndex]._type;
     result.location = location;
   }
 
@@ -120,7 +113,7 @@ library AbiDecoder {
     bool isInline;
     uint256 offset;
     for (uint256 i; i < blockLength; i++) {
-      if (param._type != AbiType.Array || i == 0) {
+      if (i == 0 || param._type == AbiType.Tuple) {
         // For structs or the first element of an array, calculate if element inline
         // For array elements after the first, they all have the same inline status
         isInline = _isInline(params, param.fields[i]);
@@ -202,17 +195,15 @@ library AbiDecoder {
 
     if (param._type == AbiType.Static) {
       return true;
-    } else if (param._type == AbiType.Dynamic || param._type == AbiType.Array) {
-      return false;
-    } else {
-      uint256 length = param.fields.length;
-
-      for (uint256 i; i < length; ++i) {
+    } else if (param._type == AbiType.Tuple) {
+      for (uint256 i; i < param.fields.length; ++i) {
         if (!_isInline(params, param.fields[i])) {
           return false;
         }
       }
       return true;
+    } else {
+      return false;
     }
   }
 }
