@@ -29,6 +29,7 @@
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.13",
+    "@safe-global/safe-contracts": "1.4.1",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@typechain/ethers-v6": "^0.5.1",
     "@typechain/hardhat": "^9.1.0",
@@ -76,6 +77,7 @@
     "build": "tsup --format esm,cjs"
   },
   "dependencies": {
+    "@gnosis-guild/zodiac-core": "^2.0.5",
     "abitype": "^1.0.7",
     "zodiac-roles-sdk": "^2.19.0"
   },
