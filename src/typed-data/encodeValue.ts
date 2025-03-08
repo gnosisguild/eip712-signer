@@ -38,15 +38,15 @@ function abiTypes(typeReference: string, types: Types): string {
   const { type, isArray, isStruct, fixedLength } =
     parseTypeReference(typeReference);
 
-  if (isStruct) {
-    return `tuple(${types[type]
-      .map((field) => abiTypes(field.type, types))
-      .join(",")})`;
-  } else if (isArray && !fixedLength) {
+  if (isArray && !fixedLength) {
     return `${abiTypes(type, types)}[]`;
   } else if (isArray && fixedLength) {
     return `tuple(${new Array(fixedLength)
       .fill(abiTypes(type, types))
+      .join(",")})`;
+  } else if (isStruct) {
+    return `tuple(${types[type]
+      .map((field) => abiTypes(field.type, types))
       .join(",")})`;
   } else {
     return type;
@@ -56,12 +56,12 @@ function abiTypes(typeReference: string, types: Types): string {
 function abiValues(value: any, typeReference: string, types: Types): any[] {
   const { type, isArray, isStruct } = parseTypeReference(typeReference);
 
-  if (isStruct) {
+  if (isArray) {
+    return value.map((v: string) => abiValues(v, type, types));
+  } else if (isStruct) {
     return types[type].map((field) =>
       abiValues(value[field.name], field.type, types),
     );
-  } else if (isArray) {
-    return value.map((v: string) => abiValues(v, type, types));
   } else {
     return value;
   }
@@ -71,12 +71,12 @@ function isInline(typeReference: string, types: Types): boolean {
   const { type, isArray, isStruct, fixedLength } =
     parseTypeReference(typeReference);
 
-  if (isStruct) {
-    return types[type].every((field) => isInline(field.type, types));
-  } else if (isArray && !fixedLength) {
+  if (isArray && !fixedLength) {
     return false;
   } else if (isArray && fixedLength) {
     return isInline(type, types);
+  } else if (isStruct) {
+    return types[type].every((field) => isInline(field.type, types));
   } else {
     return isAtomic(type);
   }

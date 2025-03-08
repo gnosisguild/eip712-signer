@@ -1,6 +1,6 @@
-import { TypedDataField, ZeroHash, keccak256, toUtf8Bytes } from "ethers";
+import { TypedDataField, ZeroHash } from "ethers";
 
-import { describeType } from "./describeType";
+import { hashType } from "./hashType";
 import {
   collectTypeReferences,
   isAtomic,
@@ -16,23 +16,11 @@ export const encodeTypes = ({ types }: { types: Types }): AbiParam[] => {
       const { isArray, isStruct, type, fixedLength } =
         parseTypeReference(typeReference);
 
-      if (isStruct) {
-        const signature = describeType({ types, type });
-        return {
-          _type: AbiType.Tuple,
-          signature,
-          typeHash: keccak256(toUtf8Bytes(signature)) as `0x${string}`,
-          fields: types[type].map((field) =>
-            allTypeReferences.indexOf(field.type),
-          ),
-        };
-      }
-
       if (isArray && fixedLength) {
         return {
           _type: AbiType.Tuple,
-          signature: "",
           typeHash: ZeroHash as `0x${string}`,
+          typeSignature: "",
           fields: new Array(fixedLength).fill(allTypeReferences.indexOf(type)),
         };
       }
@@ -40,16 +28,28 @@ export const encodeTypes = ({ types }: { types: Types }): AbiParam[] => {
       if (isArray && !fixedLength) {
         return {
           _type: AbiType.Array,
-          signature: "",
           typeHash: ZeroHash as `0x${string}`,
+          typeSignature: "",
           fields: [allTypeReferences.indexOf(type)],
+        };
+      }
+
+      if (isStruct) {
+        const { typeSignature, typeHash } = hashType({ types, type });
+        return {
+          _type: AbiType.Tuple,
+          typeHash,
+          typeSignature,
+          fields: types[type].map((field) =>
+            allTypeReferences.indexOf(field.type),
+          ),
         };
       }
 
       return {
         _type: isAtomic(type) ? AbiType.Static : AbiType.Dynamic,
-        signature: "",
         typeHash: ZeroHash as `0x${string}`,
+        typeSignature: "",
         fields: [],
       };
     },

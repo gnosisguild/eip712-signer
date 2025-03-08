@@ -10,20 +10,20 @@ export enum AbiType {
 export type AbiParam =
   | {
       _type: Exclude<AbiType, AbiType.None | AbiType.Tuple | AbiType.Array>;
-      signature: "";
       typeHash: `0x${string}`;
+      typeSignature: string;
       fields: [];
     }
   | {
       _type: AbiType.Array;
-      signature: "";
       typeHash: `0x${string}`;
+      typeSignature: string;
       fields: [number];
     }
   | {
       _type: AbiType.Tuple;
-      signature: string;
       typeHash: `0x${string}`;
+      typeSignature: string;
       fields: number[];
     };
 

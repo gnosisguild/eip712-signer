@@ -26,17 +26,18 @@ export function collectTypeReferences({ types }: { types: Types }) {
   return result;
 }
 
-export function parseTypeReference(typeReference: string) {
-  const isArray = typeReference.indexOf("[") !== -1;
-  const isStruct = !isArray && !isNative(typeReference);
+export function parseTypeReference(maybeArrayType: string) {
+  const isArray = maybeArrayType.indexOf("[") !== -1;
+  const type = isArray ? maybeArrayType.split("[")[0] : maybeArrayType;
+  const isStruct = !isNative(type);
   const fixedLength = isArray
-    ? Number(typeReference.split("[")[1].slice(0, -1))
+    ? Number(maybeArrayType.split("[")[1].slice(0, -1))
     : 0;
 
   return {
+    type,
     isArray,
     isStruct,
-    type: isArray ? typeReference.split("[")[0] : typeReference,
     fixedLength,
   };
 }
