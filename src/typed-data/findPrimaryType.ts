@@ -1,6 +1,6 @@
 import { TypedDataField } from "ethers";
 
-import { parseTypeReference } from "./typeReference";
+import { parseType } from "./parseType";
 
 type Types = Record<string, Array<TypedDataField>>;
 
@@ -15,7 +15,7 @@ export function findPrimaryType({ types }: { types: Types }): string {
   // count references for every struct type
   for (const name of Object.keys(types)) {
     for (const field of types[name]!) {
-      const { type } = parseTypeReference(field.type);
+      const { type } = parseType(field.type);
       if (count[type] !== undefined) {
         count[type]++;
       }
@@ -24,11 +24,7 @@ export function findPrimaryType({ types }: { types: Types }): string {
 
   const candidates = Object.entries(count).filter(([_, count]) => count == 0);
 
-  if (candidates.length === 0) {
-    throw new Error("No primary type found - no referenced types");
-  }
-
-  if (candidates.length > 1) {
+  if (candidates.length != 1) {
     throw new Error(
       `Expected exactly one primary type, found ${
         candidates.length

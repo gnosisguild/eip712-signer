@@ -1,9 +1,18 @@
+import { TypedDataDomain } from "abitype";
 import { AbiCoder, TypedDataField } from "ethers";
 
 import { findPrimaryType } from "./findPrimaryType";
-import { isAtomic, parseTypeReference } from "./typeReference";
+import { isAtomic, parseType } from "./parseType";
+import { typesForDomain } from "./typesForDomain";
 
 type Types = Record<string, Array<TypedDataField>>;
+
+export const encodeTypedDomain = ({ domain }: { domain: TypedDataDomain }) => {
+  return encodeTypedValue({
+    value: domain,
+    types: { EIP712Domain: typesForDomain(domain) },
+  });
+};
 
 export function encodeTypedValue({
   value,
@@ -35,8 +44,7 @@ export function encodeTypedValue({
 }
 
 function abiTypes(typeReference: string, types: Types): string {
-  const { type, isArray, isStruct, fixedLength } =
-    parseTypeReference(typeReference);
+  const { type, isArray, isStruct, fixedLength } = parseType(typeReference);
 
   if (isArray && !fixedLength) {
     return `${abiTypes(type, types)}[]`;
@@ -54,7 +62,7 @@ function abiTypes(typeReference: string, types: Types): string {
 }
 
 function abiValues(value: any, typeReference: string, types: Types): any[] {
-  const { type, isArray, isStruct } = parseTypeReference(typeReference);
+  const { type, isArray, isStruct } = parseType(typeReference);
 
   if (isArray) {
     return value.map((v: string) => abiValues(v, type, types));
@@ -68,8 +76,7 @@ function abiValues(value: any, typeReference: string, types: Types): any[] {
 }
 
 function isInline(typeReference: string, types: Types): boolean {
-  const { type, isArray, isStruct, fixedLength } =
-    parseTypeReference(typeReference);
+  const { type, isArray, isStruct, fixedLength } = parseType(typeReference);
 
   if (isArray && !fixedLength) {
     return false;

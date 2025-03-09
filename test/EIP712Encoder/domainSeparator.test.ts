@@ -2,7 +2,8 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { TypedDataEncoder, keccak256, toUtf8Bytes } from "ethers";
 
-import { encodeTypedDomain } from "../../src/typed-data";
+import { encodeTypedDomain, toAbiParams } from "../../src/typed-data";
+import { typesForDomain } from "../../src/typed-data/typesForDomain";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
 describe("EIP712Encoder", () => {
@@ -19,11 +20,15 @@ describe("EIP712Encoder", () => {
         salt: keccak256(toUtf8Bytes("Hello World")) as `0x${string}`,
       };
 
-      const { data, types } = encodeTypedDomain({ domain });
-
-      expect(await encoder.hashStruct(data, types)).to.equal(
-        TypedDataEncoder.hashDomain(domain),
-      );
+      expect(
+        await encoder.hashStruct(
+          encodeTypedDomain({ domain }),
+          toAbiParams({
+            domain,
+            types: { EIP712Domain: typesForDomain(domain) },
+          }),
+        ),
+      ).to.equal(TypedDataEncoder.hashDomain(domain));
     });
 
     it("should handle custom salt usage in the domain separator", async () => {
@@ -36,11 +41,15 @@ describe("EIP712Encoder", () => {
         salt: keccak256(toUtf8Bytes("Here is a custom salt")) as `0x${string}`,
       };
 
-      const { data, types } = encodeTypedDomain({ domain });
-
-      expect(await encoder.hashStruct(data, types)).to.equal(
-        TypedDataEncoder.hashDomain(domain),
-      );
+      expect(
+        await encoder.hashStruct(
+          encodeTypedDomain({ domain }),
+          toAbiParams({
+            domain,
+            types: { EIP712Domain: typesForDomain(domain) },
+          }),
+        ),
+      ).to.equal(TypedDataEncoder.hashDomain(domain));
     });
   });
 });

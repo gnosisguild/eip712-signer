@@ -1,3 +1,2 @@
-export { encodeTypedDomain } from "./encode";
-export { encodeTypedMessage } from "./encode";
-export { encodeTypedData } from "./encode";
+export { encodeTypedDomain, encodeTypedValue } from "./encodeTypedValue";
+export { toAbiParams } from "./toAbiParams";

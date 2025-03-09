@@ -1,6 +1,6 @@
 import { TypedDataField, keccak256, toUtf8Bytes } from "ethers";
 
-import { parseTypeReference } from "./typeReference";
+import { parseType } from "./parseType";
 
 type Types = Record<string, Array<TypedDataField>>;
 
@@ -38,7 +38,7 @@ function visit(
   },
   visited: Set<string> = new Set(),
 ): Set<string> {
-  const { type } = parseTypeReference(typeReference);
+  const { type } = parseType(typeReference);
   if (!types[type]) {
     return visited;
   }
