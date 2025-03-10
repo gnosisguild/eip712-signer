@@ -4,7 +4,7 @@ import { TypedDataField, ZeroHash } from "ethers";
 import { findPrimaryType } from "./findPrimaryType";
 import { hashType } from "./hashType";
 import { isAtomic, parseType } from "./parseType";
-import { AbiParam, AbiType } from "./types";
+import { AbiParam, AbiType, typesForDomain } from "./types";
 
 type Types = Record<string, Array<TypedDataField>>;
 
@@ -15,7 +15,9 @@ export const toAbiParams = ({
   domain: TypedDataDomain;
   types: Types;
 }): AbiParam[] => {
-  const startTypes = ["EIP712Domain", findPrimaryType({ types })];
+  const startTypes = Object.keys(types).length
+    ? ["EIP712Domain", findPrimaryType({ types })]
+    : ["EIP712Domain"];
 
   types = { ...types, EIP712Domain: typesForDomain(domain) };
 

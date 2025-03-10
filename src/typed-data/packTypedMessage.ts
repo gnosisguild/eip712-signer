@@ -1,30 +1,21 @@
-import { TypedDataDomain } from "abitype";
 import { AbiCoder, TypedDataField } from "ethers";
 
 import { findPrimaryType } from "./findPrimaryType";
 import { isAtomic, parseType } from "./parseType";
-import { typesForDomain } from "./typesForDomain";
 
 type Types = Record<string, Array<TypedDataField>>;
 
-export const encodeTypedDomain = ({ domain }: { domain: TypedDataDomain }) => {
-  return encodeTypedValue({
-    value: domain,
-    types: { EIP712Domain: typesForDomain(domain) },
-  });
-};
-
-export function encodeTypedValue({
-  value,
+export function packTypedMessage({
   types,
+  message,
 }: {
-  value: Record<string, any>;
   types: Types;
+  message: Record<string, any>;
 }) {
   const primaryType = findPrimaryType({ types });
   const encoded = AbiCoder.defaultAbiCoder().encode(
     [abiTypes(primaryType, types)],
-    [abiValues(value, primaryType, types)],
+    [abiValues(message, primaryType, types)],
   ) as `0x${string}`;
 
   /**
@@ -43,14 +34,14 @@ export function encodeTypedValue({
   return isInline(primaryType, types) ? encoded : `0x${encoded.slice(66)}`;
 }
 
-function abiTypes(typeReference: string, types: Types): string {
-  const { type, isArray, isStruct, fixedLength } = parseType(typeReference);
+function abiTypes(type: string, types: Types): string {
+  const { type: baseType, isArray, isStruct, fixedLength } = parseType(type);
 
   if (isArray && !fixedLength) {
-    return `${abiTypes(type, types)}[]`;
+    return `${abiTypes(baseType, types)}[]`;
   } else if (isArray && fixedLength) {
     return `tuple(${new Array(fixedLength)
-      .fill(abiTypes(type, types))
+      .fill(abiTypes(baseType, types))
       .join(",")})`;
   } else if (isStruct) {
     return `tuple(${types[type]

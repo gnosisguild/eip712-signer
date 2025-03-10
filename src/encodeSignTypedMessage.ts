@@ -2,7 +2,7 @@ import { TypedDataDomain } from "abitype";
 import { Interface, TypedDataField } from "ethers";
 
 import Artifact from "../artifacts/contracts/SignTypedMessageLib.sol/SignTypedMessageLib.json";
-import { encodeTypedDomain, encodeTypedValue, toAbiParams } from "./typed-data";
+import { packTypedDomain, packTypedMessage, toAbiParams } from "./typed-data";
 
 const iface = Interface.from(Artifact.abi);
 
@@ -19,8 +19,8 @@ export function encodeSignTypedMessage({
   message: Value;
 }) {
   return iface.encodeFunctionData("signTypedMessage", [
-    encodeTypedDomain({ domain }),
-    encodeTypedValue({ types, value: message }),
+    packTypedDomain({ domain }),
+    packTypedMessage({ types, message }),
     toAbiParams({ domain, types }),
   ]);
 }

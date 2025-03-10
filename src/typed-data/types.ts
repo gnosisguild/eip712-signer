@@ -1,3 +1,6 @@
+import { TypedDataDomain } from "abitype";
+import { TypedDataField } from "ethers";
+
 // should we just use? -> import { ParameterType } from "zodiac-roles-sdk/.";
 export enum AbiType {
   None,
@@ -26,6 +29,22 @@ export type AbiParam =
       typeSignature: string;
       fields: number[];
     };
+
+export function typesForDomain(domain: TypedDataDomain): TypedDataField[] {
+  return [
+    typeof domain?.name === "string" && { name: "name", type: "string" },
+    domain?.version && { name: "version", type: "string" },
+    typeof domain?.chainId === "number" && {
+      name: "chainId",
+      type: "uint256",
+    },
+    domain?.verifyingContract && {
+      name: "verifyingContract",
+      type: "address",
+    },
+    domain?.salt && { name: "salt", type: "bytes32" },
+  ].filter(Boolean) as TypedDataField[];
+}
 
 export const ATOMIC_TYPES: Record<string, boolean> = Object.fromEntries(
   [
