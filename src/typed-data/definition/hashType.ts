@@ -6,15 +6,15 @@ import { isStructType } from "./identity";
 type Types = Record<string, Array<TypedDataField>>;
 
 export function hashType({ types, type }: { types: Types; type: string }) {
-  const typeSignature = signature({ types, type });
+  const typeSignature = signature(types, type);
   const typeHash = keccak256(toUtf8Bytes(typeSignature)) as `0x${string}`;
   return { typeSignature, typeHash };
 }
 
-function signature({ types, type }: { types: Types; type: string }) {
+function signature(types: Types, entrypoint: string) {
   const allStructTypes = [
-    type,
-    ...allTypes(types, [type])
+    entrypoint,
+    ...allTypes(types, [entrypoint])
       .slice(1) // we wanna keep the entrypoint at root, only sort the rest
       .filter((type) => isStructType(type))
       .sort(),

@@ -19,13 +19,13 @@ export const toAbiParams = ({
   domain: TypedDataDomain;
   types: Types;
 }): AbiParam[] => {
-  const entrypoint = Object.keys(types).length
+  const entrypoints = Object.keys(types).length
     ? ["EIP712Domain", findPrimaryType({ types })]
     : ["EIP712Domain"];
 
   types = { ...types, EIP712Domain: typesForDomain(domain) };
 
-  return allTypes(types, entrypoint).map((type, _, allTypes) => {
+  return allTypes(types, entrypoints).map((type, _, allTypes) => {
     const {
       type: baseType,
       isAtomic,
