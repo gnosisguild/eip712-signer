@@ -1,10 +1,8 @@
-import { TypedDataField } from "ethers";
+import { TypedData } from "abitype";
 
 import { parseType } from "./parseType";
 
-type Types = Record<string, Array<TypedDataField>>;
-
-export function findPrimaryType({ types }: { types: Types }): string {
+export function findPrimaryType({ types }: { types: TypedData }): string {
   const count: Record<string, number> = {};
 
   // Initialize reference counts to 0

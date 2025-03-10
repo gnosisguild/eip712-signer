@@ -1,5 +1,5 @@
-import { TypedDataDomain } from "abitype";
-import { TypedDataField, ZeroHash } from "ethers";
+import { TypedData, TypedDataDomain } from "abitype";
+import { ZeroHash } from "ethers";
 
 import {
   allTypes,
@@ -10,20 +10,18 @@ import {
 } from "./definition";
 import { AbiParam, AbiType } from "./types";
 
-type Types = Record<string, Array<TypedDataField>>;
-
 export const toAbiParams = ({
   domain,
   types,
 }: {
   domain: TypedDataDomain;
-  types: Types;
+  types: TypedData;
 }): AbiParam[] => {
   const entrypoints = Object.keys(types).length
     ? ["EIP712Domain", findPrimaryType({ types })]
     : ["EIP712Domain"];
 
-  types = { ...types, EIP712Domain: typesForDomain(domain) };
+  types = { ...types, EIP712Domain: typesForDomain(domain) } as any;
 
   return allTypes(types, entrypoints).map((type, _, allTypes) => {
     const {

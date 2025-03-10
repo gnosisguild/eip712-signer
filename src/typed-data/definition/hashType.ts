@@ -1,17 +1,16 @@
-import { TypedDataField, keccak256, toUtf8Bytes } from "ethers";
+import { TypedData } from "abitype";
+import { keccak256, toUtf8Bytes } from "ethers";
 
 import { allTypes } from "./allTypes";
 import { isStructType } from "./identity";
 
-type Types = Record<string, Array<TypedDataField>>;
-
-export function hashType({ types, type }: { types: Types; type: string }) {
+export function hashType({ types, type }: { types: TypedData; type: string }) {
   const typeSignature = signature(types, type);
   const typeHash = keccak256(toUtf8Bytes(typeSignature)) as `0x${string}`;
   return { typeSignature, typeHash };
 }
 
-function signature(types: Types, entrypoint: string) {
+function signature(types: TypedData, entrypoint: string) {
   const allStructTypes = [
     entrypoint,
     ...allTypes(types, [entrypoint])

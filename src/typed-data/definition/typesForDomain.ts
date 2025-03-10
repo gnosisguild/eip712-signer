@@ -1,7 +1,6 @@
-import { TypedDataDomain } from "abitype";
-import { TypedDataField } from "ethers";
+import { TypedDataDomain, TypedDataParameter } from "abitype";
 
-export function typesForDomain(domain: TypedDataDomain): TypedDataField[] {
+export function typesForDomain(domain: TypedDataDomain): TypedDataParameter[] {
   return [
     typeof domain?.name === "string" && { name: "name", type: "string" },
     domain?.version && { name: "version", type: "string" },
@@ -14,5 +13,5 @@ export function typesForDomain(domain: TypedDataDomain): TypedDataField[] {
       type: "address",
     },
     domain?.salt && { name: "salt", type: "bytes32" },
-  ].filter(Boolean) as TypedDataField[];
+  ].filter(Boolean) as TypedDataParameter[];
 }

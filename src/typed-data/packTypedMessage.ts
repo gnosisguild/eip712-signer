@@ -1,14 +1,13 @@
-import { AbiCoder, TypedDataField } from "ethers";
+import { TypedData } from "abitype";
+import { AbiCoder } from "ethers";
 
 import { findPrimaryType, parseType } from "./definition";
-
-type Types = Record<string, Array<TypedDataField>>;
 
 export function packTypedMessage({
   types,
   message,
 }: {
-  types: Types;
+  types: TypedData;
   message: Record<string, any>;
 }) {
   const primaryType = findPrimaryType({ types });
@@ -33,7 +32,7 @@ export function packTypedMessage({
   return isInline(types, primaryType) ? encoded : `0x${encoded.slice(66)}`;
 }
 
-function abiTypes(types: Types, type: string): string {
+function abiTypes(types: TypedData, type: string): string {
   const { type: baseType, isStruct, isArray, fixedLength } = parseType(type);
 
   if (isStruct) {
@@ -51,7 +50,7 @@ function abiTypes(types: Types, type: string): string {
   }
 }
 
-function abiValues(types: Types, value: any, type: string): any[] {
+function abiValues(types: TypedData, value: any, type: string): any[] {
   const { type: baseType, isStruct, isArray } = parseType(type);
 
   if (isStruct) {
@@ -65,7 +64,7 @@ function abiValues(types: Types, value: any, type: string): any[] {
   }
 }
 
-function isInline(types: Types, type: string): boolean {
+function isInline(types: TypedData, type: string): boolean {
   const {
     type: baseType,
     isAtomic,

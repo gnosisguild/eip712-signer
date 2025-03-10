@@ -1,7 +1,7 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { TypedDataDomain } from "abitype";
+import { TypedData, TypedDataDomain } from "abitype";
 import { expect } from "chai";
-import { TypedDataEncoder, TypedDataField } from "ethers";
+import { TypedDataEncoder } from "ethers";
 
 import {
   packTypedDomain,
@@ -11,7 +11,6 @@ import {
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
 type Value = Record<string, any>;
-type Types = Record<string, Array<TypedDataField>>;
 
 export async function compareToEthersHashing({
   domain,
@@ -19,7 +18,7 @@ export async function compareToEthersHashing({
   message,
 }: {
   domain: TypedDataDomain;
-  types: Types;
+  types: TypedData;
   message: Value;
 }) {
   const { encoder } = await loadFixture(deployEIP712Encoder);
@@ -29,6 +28,6 @@ export async function compareToEthersHashing({
   const abiParams = toAbiParams({ domain, types });
 
   expect(await encoder.hashTypedData(_domain, _message, abiParams)).to.equal(
-    TypedDataEncoder.hash(domain, types, message),
+    TypedDataEncoder.hash(domain, types as any, message),
   );
 }

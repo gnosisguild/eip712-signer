@@ -1,10 +1,8 @@
-import { TypedDataField } from "ethers";
+import { TypedData } from "abitype";
 
 import { parseType } from "./parseType";
 
-type Types = Record<string, Array<TypedDataField>>;
-
-export function allTypes(types: Types, queue: string[]) {
+export function allTypes(types: TypedData, queue: string[]) {
   const result: string[] = [];
 
   while (queue.length) {
