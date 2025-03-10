@@ -1,10 +1,10 @@
 import { TypedDataDomain } from "abitype";
 import { TypedDataField, ZeroHash } from "ethers";
 
-import { findPrimaryType } from "./findPrimaryType";
-import { hashType } from "./hashType";
-import { isAtomic, parseType } from "./parseType";
-import { AbiParam, AbiType, typesForDomain } from "./types";
+import { isAtomic, parseType, typesForDomain } from "./definition";
+import { findPrimaryType } from "./definition/findPrimaryType";
+import { hashType } from "./definition/hashType";
+import { AbiParam, AbiType } from "./types";
 
 type Types = Record<string, Array<TypedDataField>>;
 
