@@ -3,7 +3,7 @@ import { ZeroHash } from "ethers";
 
 import {
   allTypes,
-  findPrimaryType,
+  findRootTypes,
   hashType,
   parseType,
   typesForDomain,
@@ -12,18 +12,19 @@ import { AbiParam, AbiType } from "./types";
 
 export const toAbiParams = ({
   domain,
-  types,
+  types = {},
 }: {
-  domain: TypedDataDomain;
-  types: TypedData;
+  domain?: TypedDataDomain;
+  types?: TypedData;
 }): AbiParam[] => {
-  const entrypoints = Object.keys(types).length
-    ? ["EIP712Domain", findPrimaryType({ types })]
-    : ["EIP712Domain"];
+  if (domain) {
+    types = {
+      ...types,
+      EIP712Domain: typesForDomain(domain),
+    } as any;
+  }
 
-  types = { ...types, EIP712Domain: typesForDomain(domain) } as any;
-
-  return allTypes(types, entrypoints).map((type, _, allTypes) => {
+  return allTypes(types, findRootTypes({ types })).map((type, _, allTypes) => {
     const {
       type: baseType,
       isAtomic,

@@ -2,7 +2,6 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import {
   AbiCoder,
-  Contract,
   Signer,
   TypedDataEncoder,
   ZeroAddress,
@@ -11,12 +10,15 @@ import {
 } from "ethers";
 import hre from "hardhat";
 
-import { encodeSignTypedMessage } from "../src/encodeSignTypedMessage";
-import { SignTypedMessageLib } from "../types";
+import {
+  encodeSignMessage,
+  encodeSignTypedMessage,
+} from "../src/encodeSignTypedMessage";
 import deployMastercopies from "./setup/deploy-mastercopies";
-import { iface } from "./setup/deploy-mastercopies/fallbackHandler";
-import { deploySafe } from "./setup/deploySafe";
+import { iface as ifaceFallback } from "./setup/deploy-mastercopies/fallbackHandler";
+import { iface as ifaceSafe } from "./setup/deploy-mastercopies/safeMastercopy";
 import { deploySignTypedMessageLib } from "./setup/deploySignTypedMessageLib";
+import { deploySafe } from "./setup/safe";
 
 const EIP712_MAGIC_VALUE = "0x1626ba7e";
 const EIP712_MAGIC_VALUE_OLD = "0x20c13b0b";
@@ -36,7 +38,7 @@ describe("SignTypedMessageLib", () => {
       owner,
     );
 
-    return { owner, relayer, safe, lib };
+    return { owner, relayer, safe, lib: await lib.getAddress() };
   }
   it("signMessage()", async () => {
     const { owner, relayer, safe, lib } = await loadFixture(setup);
@@ -44,18 +46,18 @@ describe("SignTypedMessageLib", () => {
     const message = "0xbadfed";
 
     await owner.sendTransaction(
-      await encodeSignMessage({ owner, safe, lib, message }),
+      await _encodeSignMessage({ owner, safe, lib, message }),
     );
 
     const resultData = await relayer.call({
-      to: await safe.getAddress(),
-      data: iface.encodeFunctionData("isValidSignature(bytes,bytes)", [
+      to: safe,
+      data: ifaceFallback.encodeFunctionData("isValidSignature(bytes,bytes)", [
         message,
         "0x",
       ]),
     });
 
-    const result = iface.decodeFunctionResult(
+    const result = ifaceFallback.decodeFunctionResult(
       "isValidSignature(bytes,bytes)",
       resultData,
     );
@@ -96,14 +98,14 @@ describe("SignTypedMessageLib", () => {
     );
 
     const resultData = await relayer.call({
-      to: await safe.getAddress(),
-      data: iface.encodeFunctionData("isValidSignature(bytes,bytes)", [
+      to: safe,
+      data: ifaceFallback.encodeFunctionData("isValidSignature(bytes,bytes)", [
         TypedDataEncoder.hash(domain, types, message),
         "0x",
       ]),
     });
 
-    const result = iface.decodeFunctionResult(
+    const result = ifaceFallback.decodeFunctionResult(
       "isValidSignature(bytes,bytes)",
       resultData,
     );
@@ -143,14 +145,14 @@ describe("SignTypedMessageLib", () => {
     await owner.sendTransaction(tx);
 
     const resultData = await relayer.call({
-      to: await safe.getAddress(),
-      data: iface.encodeFunctionData("isValidSignature(bytes,bytes)", [
+      to: safe,
+      data: ifaceFallback.encodeFunctionData("isValidSignature(bytes,bytes)", [
         TypedDataEncoder.hash(domain, types, message),
         "0x",
       ]),
     });
 
-    const result = iface.decodeFunctionResult(
+    const result = ifaceFallback.decodeFunctionResult(
       "isValidSignature(bytes,bytes)",
       resultData,
     );
@@ -159,21 +161,21 @@ describe("SignTypedMessageLib", () => {
   });
 });
 
-async function encodeSignMessage({
+async function _encodeSignMessage({
   owner,
   safe,
   lib,
   message,
 }: {
   owner: Signer;
-  safe: Contract;
-  lib: SignTypedMessageLib;
+  safe: string;
+  lib: string;
   message: string;
 }) {
-  const data = safe.interface.encodeFunctionData("execTransaction", [
-    await lib.getAddress(),
+  const data = ifaceSafe.encodeFunctionData("execTransaction", [
+    lib,
     0,
-    lib.interface.encodeFunctionData("signMessage", [message]),
+    encodeSignMessage({ message }),
     1, //Delegatecall,
     0n,
     0n,
@@ -184,7 +186,7 @@ async function encodeSignMessage({
   ]);
 
   return {
-    to: await safe.getAddress(),
+    to: safe,
     data,
     value: 0n,
   };
@@ -199,14 +201,14 @@ async function _encodeSignTypedMessage({
   types,
 }: {
   owner: Signer;
-  safe: Contract;
-  lib: SignTypedMessageLib;
+  safe: string;
+  lib: string;
   domain: any;
   message: any;
   types: any;
 }) {
-  const data = safe.interface.encodeFunctionData("execTransaction", [
-    await lib.getAddress(),
+  const data = ifaceSafe.encodeFunctionData("execTransaction", [
+    lib,
     0,
     encodeSignTypedMessage({ domain, message, types }),
     1, //Delegatecall,
@@ -219,7 +221,7 @@ async function _encodeSignTypedMessage({
   ]);
 
   return {
-    to: await safe.getAddress(),
+    to: safe,
     data,
     value: 0n,
   };
@@ -234,14 +236,14 @@ async function _encodeSignTypedMessageFallback({
   types,
 }: {
   owner: Signer;
-  safe: Contract;
-  lib: SignTypedMessageLib;
+  safe: string;
+  lib: string;
   domain: any;
   message: any;
   types: any;
 }) {
-  const data = safe.interface.encodeFunctionData("execTransaction", [
-    await lib.getAddress(),
+  const data = ifaceSafe.encodeFunctionData("execTransaction", [
+    lib,
     0,
     `0x11223344${encodeSignTypedMessage({ domain, message, types }).slice(10)}`,
     1, //Delegatecall,
@@ -254,7 +256,7 @@ async function _encodeSignTypedMessageFallback({
   ]);
 
   return {
-    to: await safe.getAddress(),
+    to: safe,
     data,
     value: 0n,
   };

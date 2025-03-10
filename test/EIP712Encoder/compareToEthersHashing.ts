@@ -4,8 +4,8 @@ import { expect } from "chai";
 import { TypedDataEncoder } from "ethers";
 
 import {
-  packTypedDomain,
-  packTypedMessage,
+  encodeTypedDomain,
+  encodeTypedMessage,
   toAbiParams,
 } from "../../src/typed-data";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
@@ -23,8 +23,8 @@ export async function compareToEthersHashing({
 }) {
   const { encoder } = await loadFixture(deployEIP712Encoder);
 
-  const _domain = packTypedDomain({ domain });
-  const _message = packTypedMessage({ types, message });
+  const _domain = encodeTypedDomain({ domain });
+  const _message = encodeTypedMessage({ types, message });
   const abiParams = toAbiParams({ domain, types });
 
   expect(await encoder.hashTypedData(_domain, _message, abiParams)).to.equal(

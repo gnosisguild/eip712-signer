@@ -3,13 +3,13 @@ import { AbiCoder } from "ethers";
 
 import { findPrimaryType, parseType } from "./definition";
 
-export function packTypedMessage({
+export function encodeTypedMessage({
   types,
   message,
 }: {
   types: TypedData;
   message: Record<string, any>;
-}) {
+}): `0x${string}` {
   const primaryType = findPrimaryType({ types });
   const encoded = AbiCoder.defaultAbiCoder().encode(
     [abiTypes(types, primaryType)],
