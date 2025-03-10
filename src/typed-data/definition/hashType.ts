@@ -1,6 +1,7 @@
 import { TypedDataField, keccak256, toUtf8Bytes } from "ethers";
 
-import { parseType } from "./parseType";
+import { allTypes } from "./allTypes";
+import { isStructType } from "./identity";
 
 type Types = Record<string, Array<TypedDataField>>;
 
@@ -13,8 +14,9 @@ export function hashType({ types, type }: { types: Types; type: string }) {
 function signature({ types, type }: { types: Types; type: string }) {
   const allStructTypes = [
     type,
-    ...Array.from(visit({ types, typeReference: type }))
-      .filter((t) => t !== type)
+    ...allTypes(types, [type])
+      .slice(1)
+      .filter((type) => isStructType(type))
       .sort(),
   ];
 
@@ -26,28 +28,4 @@ function signature({ types, type }: { types: Types; type: string }) {
           .join(",")})`,
     )
     .join("");
-}
-
-function visit(
-  {
-    types,
-    typeReference,
-  }: {
-    types: Types;
-    typeReference: string;
-  },
-  visited: Set<string> = new Set(),
-): Set<string> {
-  const { type } = parseType(typeReference);
-  if (!types[type]) {
-    return visited;
-  }
-
-  visited.add(type);
-
-  for (const field of types[type]) {
-    visit({ types, typeReference: field.type }, visited);
-  }
-
-  return visited;
 }

@@ -1,7 +1,8 @@
 import { AbiCoder, TypedDataField } from "ethers";
 
-import { isAtomic, parseType } from "./definition";
+import { parseType } from "./definition";
 import { findPrimaryType } from "./definition/findPrimaryType";
+import { isAtomicType } from "./definition/identity";
 
 type Types = Record<string, Array<TypedDataField>>;
 
@@ -66,16 +67,16 @@ function abiValues(value: any, typeReference: string, types: Types): any[] {
   }
 }
 
-function isInline(typeReference: string, types: Types): boolean {
-  const { type, isArray, isStruct, fixedLength } = parseType(typeReference);
+function isInline(type: string, types: Types): boolean {
+  const { type: baseType, isArray, isStruct, fixedLength } = parseType(type);
 
   if (isArray && !fixedLength) {
     return false;
   } else if (isArray && fixedLength) {
-    return isInline(type, types);
+    return isInline(baseType, types);
   } else if (isStruct) {
     return types[type].every((field) => isInline(field.type, types));
   } else {
-    return isAtomic(type);
+    return isAtomicType(type);
   }
 }
