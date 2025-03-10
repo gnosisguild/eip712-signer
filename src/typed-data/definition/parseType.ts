@@ -1,17 +1,22 @@
-import { isNativeType } from "./identity";
+import {
+  isArrayType,
+  isAtomicType,
+  isDynamicType,
+  isStructType,
+} from "./identity";
 
-export function parseType(maybeArrayType: string) {
-  const isArray = maybeArrayType.indexOf("[") !== -1;
-  const type = isArray ? maybeArrayType.split("[")[0] : maybeArrayType;
-  const isStruct = !isNativeType(type);
-  const fixedLength = isArray
-    ? Number(maybeArrayType.split("[")[1].slice(0, -1))
-    : 0;
+export function parseType(type: string) {
+  const isAtomic = isAtomicType(type);
+  const isDynamic = isDynamicType(type);
+  const isStruct = isStructType(type);
+  const isArray = isArrayType(type);
 
   return {
-    type,
-    isArray,
+    type: isArray ? type.split("[")[0] : type,
+    isAtomic,
+    isDynamic,
     isStruct,
-    fixedLength,
+    isArray,
+    fixedLength: isArray ? Number(type.split("[")[1].slice(0, -1)) : 0,
   };
 }

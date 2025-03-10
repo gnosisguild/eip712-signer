@@ -1,8 +1,6 @@
 import { AbiCoder, TypedDataField } from "ethers";
 
-import { parseType } from "./definition";
-import { findPrimaryType } from "./definition/findPrimaryType";
-import { isAtomicType } from "./definition/identity";
+import { findPrimaryType, parseType } from "./definition";
 
 type Types = Record<string, Array<TypedDataField>>;
 
@@ -15,8 +13,8 @@ export function packTypedMessage({
 }) {
   const primaryType = findPrimaryType({ types });
   const encoded = AbiCoder.defaultAbiCoder().encode(
-    [abiTypes(primaryType, types)],
-    [abiValues(message, primaryType, types)],
+    [abiTypes(types, primaryType)],
+    [abiValues(types, message, primaryType)],
   ) as `0x${string}`;
 
   /**
@@ -32,51 +30,57 @@ export function packTypedMessage({
    * To align with this behavior, we slice the root offset if one present,
    * ensuring that the primary type is always encoded at offset zero.
    */
-  return isInline(primaryType, types) ? encoded : `0x${encoded.slice(66)}`;
+  return isInline(types, primaryType) ? encoded : `0x${encoded.slice(66)}`;
 }
 
-function abiTypes(type: string, types: Types): string {
-  const { type: baseType, isArray, isStruct, fixedLength } = parseType(type);
+function abiTypes(types: Types, type: string): string {
+  const { type: baseType, isStruct, isArray, fixedLength } = parseType(type);
 
-  if (isArray && !fixedLength) {
-    return `${abiTypes(baseType, types)}[]`;
+  if (isStruct) {
+    return `tuple(${types[type]
+      .map((field) => abiTypes(types, field.type))
+      .join(",")})`;
   } else if (isArray && fixedLength) {
     return `tuple(${new Array(fixedLength)
-      .fill(abiTypes(baseType, types))
+      .fill(abiTypes(types, baseType))
       .join(",")})`;
-  } else if (isStruct) {
-    return `tuple(${types[type]
-      .map((field) => abiTypes(field.type, types))
-      .join(",")})`;
+  } else if (isArray && !fixedLength) {
+    return `${abiTypes(types, baseType)}[]`;
   } else {
     return type;
   }
 }
 
-function abiValues(value: any, typeReference: string, types: Types): any[] {
-  const { type, isArray, isStruct } = parseType(typeReference);
+function abiValues(types: Types, value: any, type: string): any[] {
+  const { type: baseType, isStruct, isArray } = parseType(type);
 
-  if (isArray) {
-    return value.map((v: string) => abiValues(v, type, types));
-  } else if (isStruct) {
+  if (isStruct) {
     return types[type].map((field) =>
-      abiValues(value[field.name], field.type, types),
+      abiValues(types, value[field.name], field.type),
     );
+  } else if (isArray) {
+    return value.map((child: string) => abiValues(types, child, baseType));
   } else {
     return value;
   }
 }
 
-function isInline(type: string, types: Types): boolean {
-  const { type: baseType, isArray, isStruct, fixedLength } = parseType(type);
+function isInline(types: Types, type: string): boolean {
+  const {
+    type: baseType,
+    isAtomic,
+    isStruct,
+    isArray,
+    fixedLength,
+  } = parseType(type);
 
-  if (isArray && !fixedLength) {
-    return false;
+  if (isStruct) {
+    return types[type].every((field) => isInline(types, field.type));
   } else if (isArray && fixedLength) {
-    return isInline(baseType, types);
-  } else if (isStruct) {
-    return types[type].every((field) => isInline(field.type, types));
+    return isInline(types, baseType);
+  } else if (isArray && !fixedLength) {
+    return false;
   } else {
-    return isAtomicType(type);
+    return isAtomic;
   }
 }

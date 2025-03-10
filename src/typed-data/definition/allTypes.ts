@@ -9,11 +9,14 @@ export function allTypes(types: Types, queue: string[]) {
 
   while (queue.length) {
     const type = queue.shift()!;
-    if (result.includes(type)) continue;
-
-    result.push(type);
-
     const { type: baseType } = parseType(type);
+
+    if (result.includes(type)) {
+      continue;
+    } else {
+      result.push(type);
+    }
+
     queue = queue.concat(
       baseType,
       (types[baseType] || []).map((field) => field.type),

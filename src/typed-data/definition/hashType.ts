@@ -15,7 +15,7 @@ function signature({ types, type }: { types: Types; type: string }) {
   const allStructTypes = [
     type,
     ...allTypes(types, [type])
-      .slice(1)
+      .slice(1) // we wanna keep the entrypoint at root, only sort the rest
       .filter((type) => isStructType(type))
       .sort(),
   ];

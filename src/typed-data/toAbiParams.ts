@@ -8,7 +8,6 @@ import {
   parseType,
   typesForDomain,
 } from "./definition";
-import { isAtomicType } from "./definition/identity";
 import { AbiParam, AbiType } from "./types";
 
 type Types = Record<string, Array<TypedDataField>>;
@@ -27,7 +26,23 @@ export const toAbiParams = ({
   types = { ...types, EIP712Domain: typesForDomain(domain) };
 
   return allTypes(types, entrypoint).map((type, _, allTypes) => {
-    const { isArray, isStruct, type: baseType, fixedLength } = parseType(type);
+    const {
+      type: baseType,
+      isAtomic,
+      isStruct,
+      isArray,
+      fixedLength,
+    } = parseType(type);
+
+    if (isStruct) {
+      const { typeSignature, typeHash } = hashType({ types, type });
+      return {
+        _type: AbiType.Tuple,
+        typeHash,
+        typeSignature,
+        fields: types[type].map((field) => allTypes.indexOf(field.type)),
+      };
+    }
 
     if (isArray && fixedLength) {
       return {
@@ -47,18 +62,8 @@ export const toAbiParams = ({
       };
     }
 
-    if (isStruct) {
-      const { typeSignature, typeHash } = hashType({ types, type });
-      return {
-        _type: AbiType.Tuple,
-        typeHash,
-        typeSignature,
-        fields: types[baseType].map((field) => allTypes.indexOf(field.type)),
-      };
-    }
-
     return {
-      _type: isAtomicType(type) ? AbiType.Static : AbiType.Dynamic,
+      _type: isAtomic ? AbiType.Static : AbiType.Dynamic,
       typeHash: ZeroHash as `0x${string}`,
       typeSignature: "",
       fields: [],
