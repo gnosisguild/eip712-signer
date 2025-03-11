@@ -13,7 +13,7 @@ import hre from "hardhat";
 import {
   encodeSignMessage,
   encodeSignTypedMessage,
-} from "../src/encodeSignTypedMessage";
+} from "../src/encodeSignMessage";
 import deployMastercopies from "./setup/deploy-mastercopies";
 import { iface as ifaceFallback } from "./setup/deploy-mastercopies/fallbackHandler";
 import { iface as ifaceSafe } from "./setup/deploy-mastercopies/safeMastercopy";

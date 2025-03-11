@@ -30,7 +30,7 @@ export async function deployFactory(signer: SignerWithAddress) {
   });
 
   // shoot the presigned transaction
-  await signer.provider.broadcastTransaction(transaction);
+  await (await signer.provider.broadcastTransaction(transaction)).wait();
 
   return address;
 }

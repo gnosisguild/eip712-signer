@@ -1,8 +1,15 @@
-import { EIP1193Provider, deployProxy } from "@gnosis-guild/zodiac-core";
+import { EIP1193Provider } from "@gnosis-guild/zodiac-core";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { Interface, randomBytes } from "ethers";
+import { AbiCoder, ZeroHash, randomBytes } from "ethers";
 import hre from "hardhat";
+import {
+  Condition,
+  ExecutionOptions,
+  flattenCondition,
+} from "zodiac-roles-sdk";
 
+import { moduleProxyFactory } from "./deploy-mastercopies/moduleProxyFactory";
+import { rolesModMastercopy } from "./deploy-mastercopies/rolesMastercopy";
 import { enableModuleInSafe } from "./safe";
 
 export async function deployRoles(
@@ -12,20 +19,37 @@ export async function deployRoles(
     owner,
   }: {
     avatar: string;
-    target?: string;
+    target: string;
     owner: string;
   },
   relayer: HardhatEthersSigner,
 ) {
-  const { address } = await deployProxy({
-    mastercopy: "0x650E78850858001311ffE150Dd280caEf3455F36",
-    setupArgs: {
-      types: ["address", "address", "address"],
-      values: [owner, avatar, target || avatar],
-    },
-    saltNonce: BigInt(1234567),
-    provider: createEIP1193(relayer),
-  });
+  function encodeSetUp() {
+    const initializer = AbiCoder.defaultAbiCoder().encode(
+      ["address", "address", "address"],
+      [owner, avatar, target],
+    );
+
+    return rolesModMastercopy.iface.encodeFunctionData("setUp", [initializer]);
+  }
+
+  const tx = {
+    to: moduleProxyFactory.address,
+    value: 0,
+    data: moduleProxyFactory.iface.encodeFunctionData("deployModule", [
+      rolesModMastercopy.address,
+      encodeSetUp(),
+      ZeroHash,
+    ]),
+  };
+
+  const result = await relayer.call(tx);
+  const [address] = moduleProxyFactory.iface.decodeFunctionResult(
+    "deployModule",
+    result,
+  );
+
+  await relayer.sendTransaction(tx);
 
   return address;
 }
@@ -46,12 +70,16 @@ export async function connectRolesSafeAndMember({
 
   await owner.sendTransaction({
     to: roles,
-    data: iface.encodeFunctionData("enableModule", [member]),
+    data: rolesModMastercopy.iface.encodeFunctionData("enableModule", [member]),
   });
 
   await owner.sendTransaction({
     to: roles,
-    data: iface.encodeFunctionData("assignRoles", [member, [roleKey], [true]]),
+    data: rolesModMastercopy.iface.encodeFunctionData("assignRoles", [
+      member,
+      [roleKey],
+      [true],
+    ]),
   });
 
   return { roleKey };
@@ -70,17 +98,70 @@ export async function scopeTarget({
 }) {
   await owner.sendTransaction({
     to: roles,
-    data: iface.encodeFunctionData("scopeTarget", [roleKey, target]),
+    data: rolesModMastercopy.iface.encodeFunctionData("scopeTarget", [
+      roleKey,
+      target,
+    ]),
   });
 }
 
-export const iface = Interface.from([
-  "function allowTarget(bytes32 roleKey, address targetAddress, uint8 options)",
-  "function assignRoles(address module, bytes32[] roleKeys, bool[] memberOf)",
-  "function enableModule(address module)",
-  "function execTransactionWithRole(address to, uint256 value, bytes data, uint8 operation, bytes32 roleKey, bool shouldRevert) returns (bool success)",
-  "function scopeTarget(bytes32 roleKey, address targetAddress)",
-]);
+export async function scopeFunction({
+  owner,
+  roles,
+  roleKey,
+  target,
+  selector,
+  condition,
+  executionOptions,
+}: {
+  owner: HardhatEthersSigner;
+  roles: string;
+  roleKey: string;
+  target: string;
+  selector: string;
+  condition: Condition;
+  executionOptions: ExecutionOptions;
+}) {
+  await owner.sendTransaction({
+    to: roles,
+    data: rolesModMastercopy.iface.encodeFunctionData("scopeFunction", [
+      roleKey,
+      target,
+      selector,
+      flattenCondition(condition).map((c) => [
+        c.parent,
+        c.paramType,
+        c.operator,
+        c.compValue || "0x",
+      ]),
+      executionOptions,
+    ]),
+  });
+}
+
+export async function execTransactionWithRole({
+  signer,
+  roles,
+  roleKey,
+  to,
+  data,
+  operation,
+}: {
+  signer: HardhatEthersSigner;
+  roles: string;
+  roleKey: string;
+  to: string;
+  data: string;
+  operation: number;
+}) {
+  return await signer.sendTransaction({
+    to: roles,
+    data: rolesModMastercopy.iface.encodeFunctionData(
+      "execTransactionWithRole",
+      [to, 0, data, operation, roleKey, true],
+    ),
+  });
+}
 
 function randomHash(): string {
   const uint8ArrayToHex = (bytes: Uint8Array): string => {
@@ -93,17 +174,4 @@ function randomHash(): string {
   };
 
   return uint8ArrayToHex(randomBytes(32));
-}
-
-function createEIP1193(signer: HardhatEthersSigner): EIP1193Provider {
-  return {
-    request: async ({ method, params }) => {
-      if (method == "eth_sendTransaction") {
-        const { hash } = await signer.sendTransaction((params as any[])[0]);
-        return hash;
-      }
-
-      return hre.network.provider.request({ method, params });
-    },
-  };
 }
