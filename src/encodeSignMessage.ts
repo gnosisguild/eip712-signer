@@ -10,8 +10,6 @@ import {
 
 const iface = Interface.from(Artifact.abi);
 
-type Value = Record<string, any>;
-
 export function encodeSignTypedMessage({
   domain,
   types,
@@ -19,7 +17,7 @@ export function encodeSignTypedMessage({
 }: {
   domain: TypedDataDomain;
   types: TypedData;
-  message: Value;
+  message: Record<string, any>;
 }) {
   return iface.encodeFunctionData("signTypedMessage", [
     encodeTypedDomain({ domain }),

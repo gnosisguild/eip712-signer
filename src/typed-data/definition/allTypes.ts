@@ -2,8 +2,9 @@ import { TypedData } from "abitype";
 
 import { parseType } from "./parseType";
 
-export function allTypes(types: TypedData, queue: string[]) {
+export function allTypes(types: TypedData, entrypoints: string[]) {
   const result: string[] = [];
+  let queue = [...entrypoints];
 
   while (queue.length) {
     const type = queue.shift()!;
