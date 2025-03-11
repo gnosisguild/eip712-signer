@@ -1,26 +1,28 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity >=0.8.17 <0.9.0;
 
-enum AbiType {
+enum ParamType {
   None,
   Static,
   Dynamic,
+  Tuple,
   Array,
-  Tuple
+  AbiEncodedWithSelector,
+  AbiEncoded
 }
 
-struct AbiParam {
-  AbiType _type;
+struct Declaration {
+  ParamType _type;
   bytes32 typeHash;
   uint256[] fields;
 }
 
-struct AbiPayload {
-  AbiType _type;
+struct Payload {
+  ParamType _type;
   bytes32 typeHash;
   uint256 location;
   uint256 size;
-  AbiPayload[] children;
+  Payload[] children;
 }
 
 library AbiDecoder {
@@ -29,16 +31,37 @@ library AbiDecoder {
   /**
    * @dev Maps the location and size of each abo part in the encoded data.
    * @param data TODO
-   * @param params TODO
-   * @param paramIndex TODO
+   * @param declarations TODO
+   * @param index TODO
    * @return result The mapped location and size of parameters in the encoded transaction data.
    */
   function inspect(
     bytes calldata data,
-    AbiParam[] calldata params,
-    uint256 paramIndex
-  ) internal pure returns (AbiPayload memory result) {
-    require(params[paramIndex]._type == AbiType.Tuple);
+    Declaration[] calldata declarations,
+    uint256 index
+  ) internal pure returns (Payload memory result) {
+    Declaration calldata param = declarations[index];
+
+    require(
+      param._type == ParamType.AbiEncodedWithSelector ||
+        param._type == ParamType.AbiEncoded
+    );
+
+    if (param._type == ParamType.AbiEncodedWithSelector) {
+      __block__(data, 4, declarations, index, param.fields.length, result);
+      result._type = param._type;
+      result.location = 0;
+      result.size = data.length;
+    } else {
+      _walk(
+        data,
+        _isInline(declarations, param.fields[0]) ? 0 : 32,
+        declarations,
+        param.fields[0],
+        result
+      );
+    }
+
     /*
      * The parameter encoding area contains a head region, divided into
      * 32-byte chunks. Each parameter occupies one chunk in head:
@@ -47,8 +70,6 @@ library AbiDecoder {
      *   where the actual encoded data resides. Note the offset is relative
      *   to the start of each block, and not to the start of the buffer
      */
-    __block__(data, 0, params, paramIndex, result);
-    result.typeHash = params[paramIndex].typeHash;
   }
 
   /**
@@ -63,23 +84,51 @@ library AbiDecoder {
   function _walk(
     bytes calldata data,
     uint256 location,
-    AbiParam[] calldata params,
+    Declaration[] calldata params,
     uint256 paramIndex,
-    AbiPayload memory result
+    Payload memory result
   ) private pure {
-    AbiType _type = params[paramIndex]._type;
+    ParamType paramType = params[paramIndex]._type;
 
-    if (_type == AbiType.Static) {
+    if (paramType == ParamType.Static) {
       result.size = 32;
-    } else if (_type == AbiType.Dynamic) {
+    } else if (paramType == ParamType.Dynamic) {
       result.size = 32 + _ceil32(_uint256At(data, location));
-    } else if (_type == AbiType.Tuple) {
-      __block__(data, location, params, paramIndex, result);
+    } else if (paramType == ParamType.Tuple) {
+      __block__(
+        data,
+        location,
+        params,
+        paramIndex,
+        params[paramIndex].fields.length,
+        result
+      );
       result.typeHash = params[paramIndex].typeHash;
-    } else {
-      __block__(data, location + 32, params, paramIndex, result);
+    } else if (paramType == ParamType.Array) {
+      __block__(
+        data,
+        location + 32,
+        params,
+        paramIndex,
+        _uint256At(data, location),
+        result
+      );
+      result.size += 32;
+    } else if (
+      paramType == ParamType.AbiEncodedWithSelector ||
+      paramType == ParamType.AbiEncoded
+    ) {
+      __block__(
+        data,
+        location + 32 + (paramType == ParamType.AbiEncodedWithSelector ? 4 : 0),
+        params,
+        paramIndex,
+        params[paramIndex].fields.length,
+        result
+      );
+      result.size = 32 + _ceil32(_uint256At(data, location));
     }
-    result._type = params[paramIndex]._type;
+    result._type = paramType;
     result.location = location;
   }
 
@@ -97,23 +146,19 @@ library AbiDecoder {
   function __block__(
     bytes calldata data,
     uint256 location,
-    AbiParam[] calldata params,
+    Declaration[] calldata params,
     uint256 paramIndex,
-    AbiPayload memory result
+    uint256 blockLength,
+    Payload memory result
   ) private pure {
-    AbiParam calldata param = params[paramIndex];
+    Declaration calldata param = params[paramIndex];
 
-    // For arrays, the length is stored in the 32 bytes preceding the data
-    uint256 blockLength = param._type == AbiType.Array
-      ? _uint256At(data, location - 32)
-      : param.fields.length;
-
-    result.children = new AbiPayload[](blockLength);
+    result.children = new Payload[](blockLength);
 
     bool isInline;
     uint256 offset;
     for (uint256 i; i < blockLength; i++) {
-      if (i == 0 || param._type == AbiType.Tuple) {
+      if (i == 0 || param._type != ParamType.Array) {
         // For structs or the first element of an array, calculate if element inline
         // For array elements after the first, they all have the same inline status
         isInline = _isInline(params, param.fields[i]);
@@ -123,7 +168,7 @@ library AbiDecoder {
         data,
         _locationInBlock(data, location, offset, isInline),
         params,
-        param.fields[param._type == AbiType.Array ? 0 : i],
+        param.fields[param._type == ParamType.Array ? 0 : i],
         result.children[i]
       );
 
@@ -172,12 +217,12 @@ library AbiDecoder {
    * @return bool True if the parameter is inline, false otherwise.
    */
   function _isInline(
-    AbiParam[] calldata params,
+    Declaration[] calldata params,
     uint256 paramIndex
   ) private pure returns (bool) {
-    AbiParam calldata param = params[paramIndex];
+    Declaration calldata param = params[paramIndex];
 
-    if (param._type == AbiType.Tuple) {
+    if (param._type == ParamType.Tuple) {
       for (uint256 i; i < param.fields.length; ++i) {
         if (!_isInline(params, param.fields[i])) {
           return false;
@@ -186,7 +231,7 @@ library AbiDecoder {
       return true;
     }
 
-    return param._type == AbiType.Static;
+    return param._type == ParamType.Static;
   }
 
   /**
