@@ -68,7 +68,9 @@ export async function deployFactory(signer: SignerWithAddress) {
   });
 
   // deploy the singleton factory
-  await signer.provider.broadcastTransaction(factoryInfo.transaction);
+  await (
+    await signer.provider.broadcastTransaction(factoryInfo.transaction)
+  ).wait();
 
   return address;
 }

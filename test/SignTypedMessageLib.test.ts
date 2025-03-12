@@ -7,6 +7,7 @@ import {
   ZeroAddress,
   ZeroHash,
   concat,
+  randomBytes,
 } from "ethers";
 import hre from "hardhat";
 
@@ -27,13 +28,13 @@ describe("SignTypedMessageLib", () => {
   async function setup() {
     await deployMastercopies();
     const lib = await deploySignTypedMessageLib();
-    const [, , owner, relayer] = await hre.ethers.getSigners();
+    const [owner, relayer] = await hre.ethers.getSigners();
 
     const safe = await deploySafe(
       {
         owners: [await owner.getAddress()],
         threshold: 1,
-        creationNonce: 12345678,
+        creationNonce: BigInt(randomHash()),
       },
       owner,
     );
@@ -269,3 +270,12 @@ const createPreApprovedSignature = (approver: string) => {
     "0x01",
   ]);
 };
+
+function randomHash(): string {
+  return (
+    "0x" +
+    Array.from(randomBytes(32))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}

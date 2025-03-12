@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { AbiCoder, TypedDataEncoder, ZeroAddress } from "ethers";
+import { AbiCoder, TypedDataEncoder, ZeroAddress, randomBytes } from "ethers";
 import hre from "hardhat";
 import {
   Condition,
@@ -36,7 +36,7 @@ const EIP712_MAGIC_VALUE = "0x20c13b0b";
 
 describe("scopeTypedData()", () => {
   async function setup() {
-    await deployMastercopies();
+    // await deployMastercopies();
 
     const lib = await deploySignTypedMessageLib();
     const ifaceLib = lib.interface;
@@ -47,7 +47,7 @@ describe("scopeTypedData()", () => {
       {
         owners: [await owner.getAddress()],
         threshold: 1,
-        creationNonce: 123,
+        creationNonce: BigInt(randomHash()),
       },
       relayer,
     );
@@ -447,3 +447,12 @@ describe("scopeTypedData()", () => {
     expect(result).to.deep.equal([EIP712_MAGIC_VALUE]);
   });
 });
+
+function randomHash(): string {
+  return (
+    "0x" +
+    Array.from(randomBytes(32))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}

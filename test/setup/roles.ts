@@ -1,7 +1,5 @@
-import { EIP1193Provider } from "@gnosis-guild/zodiac-core";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { AbiCoder, ZeroHash, randomBytes } from "ethers";
-import hre from "hardhat";
+import { AbiCoder, randomBytes } from "ethers";
 import {
   Condition,
   ExecutionOptions,
@@ -39,7 +37,7 @@ export async function deployRoles(
     data: moduleProxyFactory.iface.encodeFunctionData("deployModule", [
       rolesModMastercopy.address,
       encodeSetUp(),
-      ZeroHash,
+      randomHash(),
     ]),
   };
 
@@ -164,14 +162,10 @@ export async function execTransactionWithRole({
 }
 
 function randomHash(): string {
-  const uint8ArrayToHex = (bytes: Uint8Array): string => {
-    return (
-      "0x" +
-      Array.from(bytes)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("")
-    );
-  };
-
-  return uint8ArrayToHex(randomBytes(32));
+  return (
+    "0x" +
+    Array.from(randomBytes(32))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }

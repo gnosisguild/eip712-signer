@@ -27,14 +27,6 @@ export async function deploySafe(
     }),
   );
 
-  // return new Contract(
-  //   calculateSafeAddress({
-  //     owners,
-  //     threshold,
-  //     creationNonce: BigInt(creationNonce),
-  //   }),
-  //   iface,
-  // );
   return calculateSafeAddress({
     owners,
     threshold,
