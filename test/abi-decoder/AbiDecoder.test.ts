@@ -13,14 +13,10 @@ const AddressA = "0x0000000000000000000000000000000000000af1";
 
 describe("Decoder library", async () => {
   async function setup() {
-    const TestEncoder = await hre.ethers.getContractFactory("TestEncoder");
-    const testEncoder = await TestEncoder.deploy();
-
     const MockDecoder = await hre.ethers.getContractFactory("AbiDecoderMock");
     const decoder = await MockDecoder.deploy();
 
     return {
-      testEncoder,
       decoder,
     };
   }
