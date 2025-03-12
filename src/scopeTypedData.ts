@@ -36,7 +36,7 @@ function typesCondition(types: TypedData): Condition {
   const abiParams = toAbiParams({ types });
   const compValue = AbiCoder.defaultAbiCoder().encode(
     ["(uint256,bytes32,uint256[])[]"],
-    [abiParams.map((p) => [Number(p._type), p.typeHash, p.fields])],
+    [abiParams.map((p) => [p.key, p.typeHash, p.fields])],
   );
   return {
     paramType: ParameterType.Array,

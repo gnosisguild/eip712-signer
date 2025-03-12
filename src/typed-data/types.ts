@@ -10,7 +10,7 @@ export enum AbiType {
 }
 
 export type AbiParam = {
-  _type: AbiType;
+  key: AbiType;
   typeHash: `0x${string}`;
   typeSignature: string;
   fields: number[];

@@ -8,13 +8,13 @@ export function allTypes(types: TypedData, entrypoints: string[]) {
 
   while (queue.length) {
     const type = queue.shift()!;
-    const { type: baseType } = parseType(type);
 
     if (result.includes(type)) {
       continue;
-    } else {
-      result.push(type);
     }
+
+    result.push(type);
+    const { type: baseType } = parseType(type);
 
     queue = queue.concat(
       baseType,

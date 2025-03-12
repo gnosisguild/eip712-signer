@@ -31,12 +31,12 @@ describe("Decoder library", async () => {
 
     const layout = [
       {
-        _type: AbiType.AbiEncodedWithSelector,
+        key: AbiType.AbiEncodedWithSelector,
         typeHash: ZeroHash,
         fields: [1],
       },
       {
-        _type: AbiType.Static,
+        key: AbiType.Static,
         typeHash: ZeroHash,
         fields: [],
       },
@@ -59,12 +59,12 @@ describe("Decoder library", async () => {
 
     const layout = [
       {
-        _type: AbiType.AbiEncoded,
+        key: AbiType.AbiEncoded,
         typeHash: ZeroHash,
         fields: [1],
       },
       {
-        _type: AbiType.Dynamic,
+        key: AbiType.Dynamic,
         typeHash: ZeroHash,
         fields: [],
       },
@@ -88,17 +88,17 @@ describe("Decoder library", async () => {
 
     const layout = [
       {
-        _type: AbiType.AbiEncoded,
+        key: AbiType.AbiEncoded,
         typeHash: ZeroHash,
         fields: [1, 2, 1, 2, 1],
       },
       {
-        _type: AbiType.Static,
+        key: AbiType.Static,
         typeHash: ZeroHash,
         fields: [],
       },
       {
-        _type: AbiType.Dynamic,
+        key: AbiType.Dynamic,
         typeHash: ZeroHash,
         fields: [],
       },
@@ -141,17 +141,17 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -185,17 +185,17 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.Dynamic,
+          key: AbiType.Dynamic,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -220,23 +220,23 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2, 3, 2, 3, 2],
         },
 
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
         {
-          _type: AbiType.Dynamic,
+          key: AbiType.Dynamic,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -279,17 +279,17 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -313,30 +313,30 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [3, 2],
         },
         {
           // 2
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [3, 4],
         },
         {
           // 3
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
         {
           // 4
-          _type: AbiType.Dynamic,
+          key: AbiType.Dynamic,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -381,36 +381,36 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
           // 2
-          _type: AbiType.Array,
+          key: AbiType.Array,
           typeHash: ZeroHash,
           fields: [3],
         },
         {
           // 3
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [4, 5],
         },
         {
           // 4
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
         {
           // 5
-          _type: AbiType.Dynamic,
+          key: AbiType.Dynamic,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -461,22 +461,22 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [3, 3],
         },
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -515,27 +515,27 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [3, 4],
         },
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
         {
-          _type: AbiType.Dynamic,
+          key: AbiType.Dynamic,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -574,27 +574,27 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [3],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [4, 4],
         },
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
@@ -634,32 +634,32 @@ describe("Decoder library", async () => {
 
       const layout = [
         {
-          _type: AbiType.AbiEncodedWithSelector,
+          key: AbiType.AbiEncodedWithSelector,
           typeHash: ZeroHash,
           fields: [1],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [2],
         },
         {
-          _type: AbiType.AbiEncoded,
+          key: AbiType.AbiEncoded,
           typeHash: ZeroHash,
           fields: [3],
         },
         {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash,
           fields: [4, 5],
         },
         {
-          _type: AbiType.Static,
+          key: AbiType.Static,
           typeHash: ZeroHash,
           fields: [],
         },
         {
-          _type: AbiType.Dynamic,
+          key: AbiType.Dynamic,
           typeHash: ZeroHash,
           fields: [],
         },

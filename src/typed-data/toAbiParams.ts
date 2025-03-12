@@ -28,7 +28,7 @@ export const toAbiParams = ({
 
   return [
     ...rootTypes.map((_, index) => ({
-      _type: AbiType.AbiEncoded,
+      key: AbiType.AbiEncoded,
       typeHash: ZeroHash as `0x${string}`,
       typeSignature: "",
       fields: [index],
@@ -45,7 +45,7 @@ export const toAbiParams = ({
       if (isStruct) {
         const { typeSignature, typeHash } = hashType({ types, type });
         return {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash,
           typeSignature,
           fields: types[type].map((field) => allTypes.indexOf(field.type)),
@@ -54,7 +54,7 @@ export const toAbiParams = ({
 
       if (isArray && fixedLength) {
         return {
-          _type: AbiType.Tuple,
+          key: AbiType.Tuple,
           typeHash: ZeroHash as `0x${string}`,
           typeSignature: "",
           fields: new Array(fixedLength).fill(allTypes.indexOf(baseType)),
@@ -63,7 +63,7 @@ export const toAbiParams = ({
 
       if (isArray && !fixedLength) {
         return {
-          _type: AbiType.Array,
+          key: AbiType.Array,
           typeHash: ZeroHash as `0x${string}`,
           typeSignature: "",
           fields: [allTypes.indexOf(baseType)],
@@ -71,7 +71,7 @@ export const toAbiParams = ({
       }
 
       return {
-        _type: isAtomic ? AbiType.Static : AbiType.Dynamic,
+        key: isAtomic ? AbiType.Static : AbiType.Dynamic,
         typeHash: ZeroHash as `0x${string}`,
         typeSignature: "",
         fields: [],

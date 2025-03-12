@@ -7,7 +7,7 @@ contract EIP712Encoder {
   function hashTypedData(
     bytes calldata domain,
     bytes calldata message,
-    Declaration[] calldata types
+    AbiType[] calldata types
   ) public pure returns (bytes32 result) {
     (bytes32 domainSeparator, bytes32 messageHash) = (
       _hashBlock(domain, AbiDecoder.inspect(domain, types, 0).children[0]),
@@ -24,7 +24,7 @@ contract EIP712Encoder {
 
   function hashStruct(
     bytes calldata data,
-    Declaration[] calldata types
+    AbiType[] calldata types
   ) public pure returns (bytes32) {
     return _hashBlock(data, AbiDecoder.inspect(data, types, 0).children[0]);
   }
@@ -59,9 +59,9 @@ contract EIP712Encoder {
     bytes calldata data,
     Payload memory field
   ) private pure returns (bytes32) {
-    if (field._type == ParamType.Static) {
+    if (field.key == AbiTypeKey.Static) {
       return bytes32(data[field.location:]);
-    } else if (field._type == ParamType.Dynamic) {
+    } else if (field.key == AbiTypeKey.Dynamic) {
       return _hashDynamic(data, field);
     } else {
       return _hashBlock(data, field);
