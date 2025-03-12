@@ -34,7 +34,7 @@ const AddressOne = "0x0000000000000000000000000000000000000001";
 
 const EIP712_MAGIC_VALUE = "0x20c13b0b";
 
-describe.only("scopeTypedData()", () => {
+describe("scopeTypedData()", () => {
   async function setup() {
     await deployMastercopies();
 
