@@ -42,26 +42,6 @@ library AbiDecoder {
   ) internal pure returns (Payload memory result) {
     Declaration calldata param = declarations[index];
 
-    require(
-      param._type == ParamType.AbiEncodedWithSelector ||
-        param._type == ParamType.AbiEncoded
-    );
-
-    if (param._type == ParamType.AbiEncodedWithSelector) {
-      __block__(data, 4, declarations, index, param.fields.length, result);
-      result._type = param._type;
-      result.location = 0;
-      result.size = data.length;
-    } else {
-      _walk(
-        data,
-        _isInline(declarations, param.fields[0]) ? 0 : 32,
-        declarations,
-        param.fields[0],
-        result
-      );
-    }
-
     /*
      * The parameter encoding area contains a head region, divided into
      * 32-byte chunks. Each parameter occupies one chunk in head:
@@ -70,6 +50,18 @@ library AbiDecoder {
      *   where the actual encoded data resides. Note the offset is relative
      *   to the start of each block, and not to the start of the buffer
      */
+
+    __block__(
+      data,
+      param._type == ParamType.AbiEncodedWithSelector ? 4 : 0,
+      declarations,
+      index,
+      param.fields.length,
+      result
+    );
+    result._type = param._type;
+    result.location = 0;
+    result.size = data.length;
   }
 
   /**

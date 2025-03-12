@@ -10,8 +10,8 @@ contract EIP712Encoder {
     Declaration[] calldata types
   ) public pure returns (bytes32 result) {
     (bytes32 domainSeparator, bytes32 messageHash) = (
-      _hashBlock(domain, AbiDecoder.inspect(domain, types, 0)),
-      _hashBlock(message, AbiDecoder.inspect(message, types, 1))
+      _hashBlock(domain, AbiDecoder.inspect(domain, types, 0).children[0]),
+      _hashBlock(message, AbiDecoder.inspect(message, types, 1).children[0])
     );
     assembly {
       let ptr := mload(0x40)
@@ -26,7 +26,7 @@ contract EIP712Encoder {
     bytes calldata data,
     Declaration[] calldata types
   ) public pure returns (bytes32) {
-    return _hashBlock(data, AbiDecoder.inspect(data, types, 0));
+    return _hashBlock(data, AbiDecoder.inspect(data, types, 0).children[0]);
   }
 
   function _hashBlock(
