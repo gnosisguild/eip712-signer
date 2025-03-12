@@ -22,7 +22,7 @@ import {
 } from "./setup/roles";
 import { deploySafe } from "./setup/safe";
 
-describe.skip("scopeTypedData()", () => {
+describe.only("scopeTypedData()", () => {
   async function setup() {
     await deployMastercopies();
 
@@ -59,23 +59,6 @@ describe.skip("scopeTypedData()", () => {
       target: await lib.getAddress(),
     });
 
-    return {
-      owner,
-      member,
-      relayer,
-      safe,
-      roles,
-      roleKey,
-      lib: await lib.getAddress(),
-      ifaceLib,
-    };
-  }
-  it("try me", async () => {
-    const { owner, member, relayer, safe, roles, roleKey, lib, ifaceLib } =
-      await loadFixture(setup);
-
-    console.log(roles);
-
     const domain = { chainId: 7 };
     const types = {
       Person: [{ name: "name", type: "bytes" }],
@@ -83,24 +66,7 @@ describe.skip("scopeTypedData()", () => {
     };
     const message = { name: "0xbadfed" };
 
-    console.log(encodeSignTypedMessage({ domain, types, message }));
-
-    // const _domain: Condition = {
-    //   paramType: ParameterType.Tuple,
-    //   operator: Operator.Matches,
-    //   children: [
-    //     {
-    //       paramType: ParameterType.Static,
-    //       operator: Operator.EqualTo,
-    //       compValue: AbiCoder.defaultAbiCoder().encode(
-    //         ["uint256"],
-    //         [1],
-    //       ) as `0x${string}`,
-    //     },
-    //   ],
-    // };
-
-    const _domain: Condition = {
+    const conditionDomain: Condition = {
       paramType: ParameterType.AbiEncoded,
       operator: Operator.Matches,
       children: [
@@ -113,7 +79,7 @@ describe.skip("scopeTypedData()", () => {
               operator: Operator.EqualTo,
               compValue: AbiCoder.defaultAbiCoder().encode(
                 ["uint256"],
-                [7],
+                [domain.chainId],
               ) as any,
             },
           ],
@@ -121,48 +87,63 @@ describe.skip("scopeTypedData()", () => {
       ],
     };
 
-    const _message: Condition = {
+    const conditionMessage: Condition = {
       paramType: ParameterType.AbiEncoded,
       operator: Operator.Matches,
       children: [
         {
-          paramType: ParameterType.Dynamic,
-          operator: Operator.EqualTo,
-          compValue: AbiCoder.defaultAbiCoder().encode(
-            ["bytes"],
-            ["0xbadfed"],
-          ) as `0x${string}`,
+          paramType: ParameterType.Tuple,
+          operator: Operator.Matches,
+          children: [
+            {
+              paramType: ParameterType.Dynamic,
+              operator: Operator.EqualTo,
+              compValue: AbiCoder.defaultAbiCoder().encode(
+                ["bytes"],
+                [message.name],
+              ) as any,
+            },
+          ],
         },
       ],
     };
 
-    // 0x16aa6209
-    // 0000000000000000000000000000000000000000000000000000000000000060
-    // 00000000000000000000000000000000000000000000000000000000000000a0
-    // 0000000000000000000000000000000000000000000000000000000000000140
-    // 0000000000000000000000000000000000000000000000000000000000000020
-    // 0000000000000000000000000000000000000000000000000000000000000007
-    // 0000000000000000000000000000000000000000000000000000000000000080
-    // 0000000000000000000000000000000000000000000000000000000000000020
-    // 0000000000000000000000000000000000000000000000000000000000000020
-    // 0000000000000000000000000000000000000000000000000000000000000003
-    // badfed0000000000000000000000000000000000000000000000000000000000
-
     const condition = scopeTypedData({
-      domain: _domain,
+      domain: conditionDomain,
+      message: conditionMessage,
       types,
-      message: _message,
     });
 
     await scopeFunction({
       owner,
       roles,
       roleKey,
-      target: lib,
+      target: await lib.getAddress(),
       selector: ifaceLib.getFunction("signTypedMessage").selector,
       condition,
       executionOptions: ExecutionOptions.Both,
     });
+
+    return {
+      owner,
+      member,
+      relayer,
+      safe,
+      roles,
+      roleKey,
+      lib: await lib.getAddress(),
+      ifaceLib,
+    };
+  }
+  it("try me", async () => {
+    const { member, safe, roles, roleKey, lib } = await loadFixture(setup);
+
+    const domain = { chainId: 7 };
+    const types = {
+      Person: [{ name: "name", type: "bytes" }],
+      EIP712Domain: typesForDomain(domain),
+    };
+    const message = { name: "0xbadfed" };
 
     await execTransactionWithRole({
       signer: member,
@@ -173,4 +154,12 @@ describe.skip("scopeTypedData()", () => {
       operation: 1,
     });
   });
+
+  it("correctly restricts some elements in domain");
+
+  it("correctly restricts some elements in message");
+
+  it("correctly enforces exact type layout");
+
+  it("signs a message from a safe, through a roles mod");
 });
