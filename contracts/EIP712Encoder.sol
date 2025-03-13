@@ -3,16 +3,22 @@ pragma solidity >=0.8.21;
 
 import "./AbiDecoder.sol";
 
+struct TypedData {
+  AbiType[] abiTypes;
+  bytes32[] typeHashes;
+}
+
 contract EIP712Encoder {
   function hashTypedData(
     bytes calldata domain,
     bytes calldata message,
-    AbiType[] calldata types
+    TypedData calldata types
   ) public pure returns (bytes32 result) {
     (bytes32 domainSeparator, bytes32 messageHash) = (
-      _hashBlock(domain, AbiDecoder.inspect(domain, types, 0).children[0]),
-      _hashBlock(message, AbiDecoder.inspect(message, types, 1).children[0])
+      __entrypoint(domain, types, 0),
+      __entrypoint(message, types, 1)
     );
+
     assembly {
       let ptr := mload(0x40)
       mstore(ptr, hex"1901")
@@ -24,24 +30,37 @@ contract EIP712Encoder {
 
   function hashStruct(
     bytes calldata data,
-    AbiType[] calldata types
+    TypedData calldata types
   ) public pure returns (bytes32) {
-    return _hashBlock(data, AbiDecoder.inspect(data, types, 0).children[0]);
+    return __entrypoint(data, types, 0);
+  }
+
+  function __entrypoint(
+    bytes calldata data,
+    TypedData calldata types,
+    uint256 index
+  ) private pure returns (bytes32) {
+    Payload memory payload = AbiDecoder
+      .inspect(data, types.abiTypes, index)
+      .children[0];
+
+    return _hashBlock(data, types.typeHashes, payload);
   }
 
   function _hashBlock(
     bytes calldata data,
+    bytes32[] calldata typeHashes,
     Payload memory _block
   ) private pure returns (bytes32) {
     bytes32[] memory result = new bytes32[](_block.children.length);
     for (uint256 i = 0; i < _block.children.length; i++) {
-      result[i] = _encodeField(data, _block.children[i]);
+      result[i] = _encodeField(data, typeHashes, _block.children[i]);
     }
 
     return
       keccak256(
-        _block.typeHash != bytes32(0)
-          ? abi.encodePacked(_block.typeHash, result)
+        typeHashes[_block.index] != bytes32(0)
+          ? abi.encodePacked(typeHashes[_block.index], result)
           : abi.encodePacked(result)
       );
   }
@@ -57,6 +76,7 @@ contract EIP712Encoder {
 
   function _encodeField(
     bytes calldata data,
+    bytes32[] calldata typeHashes,
     Payload memory field
   ) private pure returns (bytes32) {
     if (field.key == AbiTypeKey.Static) {
@@ -64,7 +84,7 @@ contract EIP712Encoder {
     } else if (field.key == AbiTypeKey.Dynamic) {
       return _hashDynamic(data, field);
     } else {
-      return _hashBlock(data, field);
+      return _hashBlock(data, typeHashes, field);
     }
   }
 }

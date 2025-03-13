@@ -7,6 +7,7 @@ import {
   ZeroAddress,
   ZeroHash,
   concat,
+  getAddress,
   randomBytes,
 } from "ethers";
 import hre from "hardhat";
@@ -14,7 +15,7 @@ import hre from "hardhat";
 import {
   encodeSignMessage,
   encodeSignTypedMessage,
-} from "../src/encodeSignMessage";
+} from "../src/encodeSignTypedMessage";
 import deployMastercopies from "./setup/deploy-mastercopies";
 import { iface as ifaceFallback } from "./setup/deploy-mastercopies/fallbackHandler";
 import { iface as ifaceSafe } from "./setup/deploy-mastercopies/safeMastercopy";
@@ -117,22 +118,51 @@ describe("SignTypedMessageLib", () => {
   it("signTypedMessage() via fallback", async () => {
     const { owner, relayer, safe, lib } = await loadFixture(setup);
 
-    const domain = {
-      version: "1",
-      chainId: 1, // Mainnet
-    };
-
     const types = {
-      Message: [
+      Order: [
+        { name: "maker", type: "Person" },
+        { name: "taker", type: "Person" },
+        { name: "asset", type: "Asset" },
+        { name: "price", type: "uint256" },
+        { name: "expiry", type: "uint256" },
+      ],
+      Person: [
+        { name: "wallet", type: "address" },
+        { name: "reputation", type: "uint256" },
+      ],
+      Asset: [
+        { name: "tokenAddress", type: "address" },
+        { name: "tokenId", type: "uint256" },
         { name: "amount", type: "uint256" },
-        { name: "message", type: "string" },
       ],
     };
 
-    const message = {
-      amount: 100,
-      message: "Hello World",
+    const domain = {
+      name: "TradePlatform",
+      version: "1.0",
+      chainId: 137,
+      verifyingContract:
+        "0xABABABababABababABababABababABababABaBab".toLowerCase(),
     };
+    const message = {
+      maker: {
+        wallet: "0x1111111111111111111111111111111111111111",
+        reputation: 100,
+      },
+      taker: {
+        wallet: "0x2222222222222222222222222222222222222222",
+        reputation: 200,
+      },
+      asset: {
+        tokenAddress: "0x3333333333333333333333333333333333333333",
+        tokenId: 12345,
+        amount: 1,
+      },
+      price: 5000000000000,
+      expiry: 1710000000,
+    };
+
+    const hashFromEthers = TypedDataEncoder.hash(domain, types, message);
 
     const tx = await _encodeSignTypedMessageFallback({
       owner,
@@ -148,7 +178,7 @@ describe("SignTypedMessageLib", () => {
     const resultData = await relayer.call({
       to: safe,
       data: ifaceFallback.encodeFunctionData("isValidSignature(bytes,bytes)", [
-        TypedDataEncoder.hash(domain, types, message),
+        hashFromEthers,
         "0x",
       ]),
     });
@@ -277,5 +307,14 @@ function randomHash(): string {
     Array.from(randomBytes(32))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("")
+  );
+}
+
+function randomAddress(): string {
+  return getAddress(
+    "0x" +
+      Array.from(randomBytes(20))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(""),
   );
 }

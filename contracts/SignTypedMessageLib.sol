@@ -41,7 +41,7 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   function signTypedMessage(
     bytes calldata domain,
     bytes calldata message,
-    AbiType[] calldata types
+    TypedData calldata types
   ) public {
     require(address(this) != deployedAt);
     bytes32 safeMessageHash = hashSafeTypedMessage(domain, message, types);
@@ -64,7 +64,7 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   function hashSafeTypedMessage(
     bytes calldata domain,
     bytes calldata message,
-    AbiType[] calldata types
+    TypedData calldata types
   ) public view returns (bytes32) {
     return hashSafeMessage(abi.encode(hashTypedData(domain, message, types)));
   }
@@ -77,7 +77,7 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   fallback() external {
     bytes calldata domain;
     bytes calldata message;
-    AbiType[] calldata types;
+    TypedData calldata types;
     assembly {
       // offset to domain block
       domain.offset := add(calldataload(0x04), 0x24)
@@ -88,8 +88,7 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
       message.length := calldataload(sub(message.offset, 0x20))
 
       // offset to types block
-      types.offset := add(calldataload(0x44), 0x24)
-      types.length := calldataload(sub(types.offset, 0x20))
+      types := add(calldataload(0x44), 0x04)
     }
     signTypedMessage(domain, message, types);
   }

@@ -1,6 +1,13 @@
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
-import { AbiCoder, TypedDataEncoder, ZeroAddress, randomBytes } from "ethers";
+import {
+  AbiCoder,
+  TypedDataEncoder,
+  ZeroAddress,
+  ZeroHash,
+  keccak256,
+  randomBytes,
+} from "ethers";
 import hre from "hardhat";
 import {
   Condition,
@@ -10,12 +17,8 @@ import {
 } from "zodiac-roles-sdk";
 
 import { scopeTypedData } from "../src";
-import { encodeSignTypedMessage } from "../src/encodeSignMessage";
-import {
-  encodeTypedDomain,
-  encodeTypedMessage,
-  toAbiTypes,
-} from "../src/typed-data";
+import { encodeSignTypedMessage } from "../src/encodeSignTypedMessage";
+import { toAbiTypes } from "../src/typed-data";
 import { typesForDomain } from "../src/typed-data/definition";
 import deployMastercopies from "./setup/deploy-mastercopies";
 import { iface as ifaceFallback } from "./setup/deploy-mastercopies/fallbackHandler";
@@ -191,7 +194,7 @@ describe("scopeTypedData()", () => {
       ],
     };
 
-    const condition = scopeTypedData({
+    const { selector, condition } = scopeTypedData({
       domain: conditionDomain,
       message: conditionMessage,
       types,
@@ -202,7 +205,7 @@ describe("scopeTypedData()", () => {
       roles,
       roleKey,
       target: await lib.getAddress(),
-      selector: ifaceLib.getFunction("signTypedMessage").selector,
+      selector,
       condition,
       executionOptions: ExecutionOptions.Both,
     });
@@ -367,39 +370,32 @@ describe("scopeTypedData()", () => {
   });
 
   it("correctly enforces exact type layout", async () => {
-    const { lib, ifaceLib, message, domain, types, execTransactionFromRoles } =
+    const { lib, message, domain, types, execTransactionFromRoles } =
       await loadFixture(setup);
 
-    function encodeSignTypedMessageButTamperTypes() {
-      return ifaceLib.encodeFunctionData("signTypedMessage", [
-        encodeTypedDomain({ domain }),
-        encodeTypedMessage({ types, message }),
-        toAbiTypes({
-          domain,
-          types: {
-            ...types,
-            Person: [...types.Person, { name: "meta", type: "bytes" }],
-          },
-        }),
-      ]);
-    }
-
+    const data = encodeSignTypedMessage({ domain, types, message });
     await expect(
       execTransactionFromRoles({
         to: lib,
-        data: encodeSignTypedMessageButTamperTypes(),
-        operation: 1,
-      }),
-    ).to.be.reverted;
-
-    // any name for the app
-    await expect(
-      execTransactionFromRoles({
-        to: lib,
-        data: encodeSignTypedMessage({ domain, types, message }),
+        data: data,
         operation: 1,
       }),
     ).to.not.be.reverted;
+
+    const aTypeHash = toAbiTypes({ domain, types }).typeHashes.find(
+      (t) => t != ZeroHash,
+    )!;
+
+    // change one hash
+    expect(data.includes(aTypeHash.slice(2))).to.be.true;
+
+    await expect(
+      execTransactionFromRoles({
+        to: lib,
+        data: data.replace(aTypeHash.slice(2), keccak256(aTypeHash).slice(2)),
+        operation: 1,
+      }),
+    ).to.be.reverted;
   });
 
   it("signs a message from a safe, through a roles mod", async () => {

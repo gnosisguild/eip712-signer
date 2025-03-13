@@ -13,13 +13,12 @@ enum AbiTypeKey {
 
 struct AbiType {
   AbiTypeKey key;
-  bytes32 typeHash;
   uint256[] fields;
 }
 
 struct Payload {
   AbiTypeKey key;
-  bytes32 typeHash;
+  uint256 index;
   uint256 location;
   uint256 size;
   Payload[] children;
@@ -56,6 +55,7 @@ library AbiDecoder {
       abiTypes[index].fields.length,
       result
     );
+    result.index = 0;
     result.key = abiTypes[index].key;
     result.location = 0;
     result.size = data.length;
@@ -92,7 +92,6 @@ library AbiDecoder {
         abiTypes[index].fields.length,
         result
       );
-      result.typeHash = abiTypes[index].typeHash;
     } else if (key == AbiTypeKey.Array) {
       __block__(
         data,
@@ -116,8 +115,9 @@ library AbiDecoder {
       );
       result.size = 32 + _ceil32(_uint256At(data, location));
     }
-    result.location = location;
     result.key = key;
+    result.index = index;
+    result.location = location;
   }
 
   /**

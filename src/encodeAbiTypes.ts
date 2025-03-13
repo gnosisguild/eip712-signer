@@ -1,0 +1,18 @@
+import { TypedData, TypedDataDomain } from "abitype";
+import { AbiCoder } from "ethers";
+
+import { toAbiTypes } from "./typed-data";
+
+export function encodeAbiTypes({
+  domain,
+  types,
+}: {
+  domain?: TypedDataDomain;
+  types: TypedData;
+}) {
+  const { abiTypes, typeHashes } = toAbiTypes({ domain, types });
+  return AbiCoder.defaultAbiCoder().encode(
+    ["tuple(tuple(uint8,uint256[])[], bytes32[])"],
+    [[abiTypes.map((p) => [p.key, p.fields]), typeHashes]],
+  ) as `0x${string}`;
+}

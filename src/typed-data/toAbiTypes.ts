@@ -8,7 +8,7 @@ import {
   parseType,
   typesForDomain,
 } from "./definition";
-import { AbiParam, AbiType } from "./types";
+import { AbiType } from "./types";
 
 export function toAbiTypes({
   domain,
@@ -16,7 +16,7 @@ export function toAbiTypes({
 }: {
   domain?: TypedDataDomain;
   types?: TypedData;
-}): AbiParam[] {
+}) {
   if (domain) {
     types = {
       ...types,
@@ -26,7 +26,7 @@ export function toAbiTypes({
 
   const rootTypes = findRootTypes({ types });
 
-  return [
+  const abiTypes = [
     ...rootTypes.map((_, index) => ({
       key: AbiType.AbiEncoded,
       typeHash: ZeroHash as `0x${string}`,
@@ -78,4 +78,9 @@ export function toAbiTypes({
       };
     }),
   ].map((a) => ({ ...a, fields: a.fields.map((f) => f + rootTypes.length) }));
+
+  return {
+    abiTypes: abiTypes,
+    typeHashes: abiTypes.map(({ typeHash }) => typeHash),
+  };
 }

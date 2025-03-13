@@ -1,7 +1,8 @@
 import { TypedData, TypedDataDomain } from "abitype";
-import { Interface } from "ethers";
+import { Interface, keccak256 } from "ethers";
 
 import Artifact from "../artifacts/contracts/SignTypedMessageLib.sol/SignTypedMessageLib.json";
+import { encodeAbiTypes } from "./encodeAbiTypes";
 import {
   encodeTypedDomain,
   encodeTypedMessage,
@@ -19,11 +20,19 @@ export function encodeSignTypedMessage({
   types: TypedData;
   message: Record<string, any>;
 }) {
-  return iface.encodeFunctionData("signTypedMessage", [
+  /*
+   * We want to hit the correct roles rule, and so we hash the types, and use
+   * 4 leading bytes to determine the selector entrypoint within SignTypedMessageLib
+   */
+  const selector = keccak256(encodeAbiTypes({ domain, types })).slice(0, 10);
+
+  const data = iface.encodeFunctionData("signTypedMessage", [
     encodeTypedDomain({ domain }),
     encodeTypedMessage({ types, message }),
     toAbiTypes({ domain, types }),
   ]);
+
+  return `${selector}${data.slice(10)}`;
 }
 
 export function encodeSignMessage({ message }: { message: string }) {
