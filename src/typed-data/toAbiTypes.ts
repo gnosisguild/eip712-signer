@@ -10,13 +10,13 @@ import {
 } from "./definition";
 import { AbiParam, AbiType } from "./types";
 
-export const toAbiParams = ({
+export function toAbiTypes({
   domain,
   types = {},
 }: {
   domain?: TypedDataDomain;
   types?: TypedData;
-}): AbiParam[] => {
+}): AbiParam[] {
   if (domain) {
     types = {
       ...types,
@@ -78,4 +78,4 @@ export const toAbiParams = ({
       };
     }),
   ].map((a) => ({ ...a, fields: a.fields.map((f) => f + rootTypes.length) }));
-};
+}

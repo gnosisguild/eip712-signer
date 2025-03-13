@@ -5,7 +5,7 @@ import Artifact from "../artifacts/contracts/SignTypedMessageLib.sol/SignTypedMe
 import {
   encodeTypedDomain,
   encodeTypedMessage,
-  toAbiParams,
+  toAbiTypes,
 } from "./typed-data";
 
 const iface = Interface.from(Artifact.abi);
@@ -22,7 +22,7 @@ export function encodeSignTypedMessage({
   return iface.encodeFunctionData("signTypedMessage", [
     encodeTypedDomain({ domain }),
     encodeTypedMessage({ types, message }),
-    toAbiParams({ domain, types }),
+    toAbiTypes({ domain, types }),
   ]);
 }
 

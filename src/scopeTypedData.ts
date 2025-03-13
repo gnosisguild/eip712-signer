@@ -2,7 +2,7 @@ import { TypedData } from "abitype";
 import { AbiCoder, Interface } from "ethers";
 import { Condition, Operator, ParameterType, rolesAbi } from "zodiac-roles-sdk";
 
-import { toAbiParams } from "./typed-data";
+import { toAbiTypes } from "./typed-data";
 
 export const scopeTypedData = ({
   domain,
@@ -33,10 +33,10 @@ export const scopeTypedData = ({
 };
 
 function typesCondition(types: TypedData): Condition {
-  const abiParams = toAbiParams({ types });
+  const abiTypes = toAbiTypes({ types });
   const compValue = AbiCoder.defaultAbiCoder().encode(
     ["(uint256,bytes32,uint256[])[]"],
-    [abiParams.map((p) => [p.key, p.typeHash, p.fields])],
+    [abiTypes.map((p) => [p.key, p.typeHash, p.fields])],
   );
   return {
     paramType: ParameterType.Array,

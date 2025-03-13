@@ -14,7 +14,7 @@ import { encodeSignTypedMessage } from "../src/encodeSignMessage";
 import {
   encodeTypedDomain,
   encodeTypedMessage,
-  toAbiParams,
+  toAbiTypes,
 } from "../src/typed-data";
 import { typesForDomain } from "../src/typed-data/definition";
 import deployMastercopies from "./setup/deploy-mastercopies";
@@ -374,7 +374,7 @@ describe("scopeTypedData()", () => {
       return ifaceLib.encodeFunctionData("signTypedMessage", [
         encodeTypedDomain({ domain }),
         encodeTypedMessage({ types, message }),
-        toAbiParams({
+        toAbiTypes({
           domain,
           types: {
             ...types,

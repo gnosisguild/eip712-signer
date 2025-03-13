@@ -2,7 +2,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { TypedDataEncoder, keccak256, toUtf8Bytes } from "ethers";
 
-import { encodeTypedDomain, toAbiParams } from "../../src/typed-data";
+import { encodeTypedDomain, toAbiTypes } from "../../src/typed-data";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
 describe("EIP712Encoder", () => {
@@ -22,7 +22,7 @@ describe("EIP712Encoder", () => {
       expect(
         await encoder.hashStruct(
           encodeTypedDomain({ domain }),
-          toAbiParams({ domain }),
+          toAbiTypes({ domain }),
         ),
       ).to.equal(TypedDataEncoder.hashDomain(domain));
     });
@@ -40,7 +40,7 @@ describe("EIP712Encoder", () => {
       expect(
         await encoder.hashStruct(
           encodeTypedDomain({ domain }),
-          toAbiParams({ domain }),
+          toAbiTypes({ domain }),
         ),
       ).to.equal(TypedDataEncoder.hashDomain(domain));
     });

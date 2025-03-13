@@ -6,7 +6,7 @@ import { TypedDataEncoder } from "ethers";
 import {
   encodeTypedDomain,
   encodeTypedMessage,
-  toAbiParams,
+  toAbiTypes,
 } from "../../src/typed-data";
 import { deployEIP712Encoder } from "../EIP712Encoder.fixture";
 
@@ -25,7 +25,7 @@ export async function compareToEthersHashing({
 
   const _domain = encodeTypedDomain({ domain });
   const _message = encodeTypedMessage({ types, message });
-  const abiParams = toAbiParams({ domain, types });
+  const abiParams = toAbiTypes({ domain, types });
 
   expect(await encoder.hashTypedData(_domain, _message, abiParams)).to.equal(
     TypedDataEncoder.hash(domain, types as any, message),
