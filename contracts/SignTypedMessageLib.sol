@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LGPL-3.0
 pragma solidity >=0.8.21;
 
 import "./SafeStorage.sol";
@@ -9,13 +9,13 @@ interface ISafe {
 }
 
 contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
-  /// @dev deployment address
+  /// @dev Deployment address of the contract.
   address public immutable deployedAt;
 
-  /// @dev Event that is emitted when an a Safe signing a message into storage
+  /// @dev Event emitted when a Safe signs a message and stores it.
   event SignMsg(bytes32 indexed msgHash);
 
-  /// @dev The EIP-712 type hash used to prefix the message
+  /// @dev The EIP-712 type hash used to prefix the message.
   bytes32 private constant safeMessageTypeHash =
     keccak256("SafeMessage(bytes message)");
 
@@ -24,8 +24,11 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   }
 
   /**
-   * @notice marks a message as signed.
-   * @dev can be verified using EIP-1271 validation method by passing the message and empty bytes as the signature, representing an onchain signature
+   * @notice Marks a message as signed in storage.
+   * @dev Can be verified using EIP-1271 validation method by passing the
+   *      message and empty bytes as the signature, representing an on-chain
+   *      signature.
+   * @param message The message to be signed.
    */
   function signMessage(bytes calldata message) external {
     bytes32 safeMessageHash = hashSafeMessage(message);
@@ -35,8 +38,13 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   }
 
   /**
-   * @notice hashes a typed message input (EIP-712) and marks this hash as signed
-   * @dev can be verified using EIP-1271 validation method by passing the typed message hash as the message, and empty bytes as the signature, representing an onchain signature
+   * @notice Hashes a typed message input (EIP-712) and marks the hash as signed.
+   * @dev Can be verified using EIP-1271 validation by passing the typed message
+   *      hash as the message and empty bytes as the signature, representing an
+   *      on-chain signature.
+   * @param domain The encoded EIP712 domain
+   * @param message The encoded EIP712 message
+   * @param types The flattened EIP7127 typedData definitions
    */
   function signTypedMessage(
     bytes calldata domain,
@@ -50,6 +58,12 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
     emit SignMsg(safeMessageHash);
   }
 
+  /**
+   * @notice Produces a SafeMessage hash for a plain message.
+   * @dev Follows Safe's schema for internal signed messages
+   * @param message The message to hash.
+   * @return bytes32 the resulting hash
+   */
   function hashSafeMessage(bytes memory message) public view returns (bytes32) {
     return
       keccak256(
@@ -61,6 +75,14 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
       );
   }
 
+  /**
+   * @notice Produces a SafeMessage hash for a EIP712 structed message.
+   * @dev Follows Safe's schema for internal signed messages
+   * @param domain The encoded EIP7127 domain part of data to be signed
+   * @param message The encoded EIP7127 message part of data to be signed
+   * @param types The flattened EIP7127 typedData definitions
+   * @return bytes32 the resulting hash
+   */
   function hashSafeTypedMessage(
     bytes calldata domain,
     bytes calldata message,
@@ -73,7 +95,7 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   /**
    * We make the signTypedMessage function available under any selector. This
    * allows scoping different type trees under different signTypedMessage
-   * aliases, working around the overly strict integrity checks of the RolesMod
+   * aliases. Useful for expressing roles permissions
    */
   fallback() external {
     bytes calldata domain;

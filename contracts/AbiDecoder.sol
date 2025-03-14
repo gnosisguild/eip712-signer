@@ -1,100 +1,93 @@
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: LGPL-3.0
 pragma solidity >=0.8.17 <0.9.0;
 
-enum AbiTypeKey {
-  None,
-  Static,
-  Dynamic,
-  Tuple,
-  Array,
-  AbiEncodedWithSelector,
-  AbiEncoded
-}
+import "./AbiDecoderTypes.sol";
 
-struct AbiType {
-  AbiTypeKey key;
-  uint256[] fields;
-}
-
-struct Payload {
-  uint256 index;
-  uint256 location;
-  uint256 size;
-  Payload[] children;
-}
-
+/**
+ * @title AbiDecoder - Library for decoding ABI-encoded calldata and mapping
+ *        parameter payloads
+ *
+ * @author gnosisguild
+ */
 library AbiDecoder {
   error CalldataOutOfBounds();
 
   /**
-   * @dev Maps the location and size of each abo part in the encoded data.
-   * @param data TODO
-   * @param abiTypes TODO
-   * @param index TODO
-   * @return result The mapped location and size of parameters in the encoded transaction data.
+   * @dev Maps the location and size of a parameter in calldata according to
+   *      an ABI `typeTree`.
+   *
+   * @param data     The encoded transaction data to be inspected.
+   * @param typeTree Array of ABI type definitions forming the typeTree.
+   * @param index    Entrypoint in typeTree.
+   * @return result  The mapped location and size of parameters in the encoded
+   *                transaction data.
    */
   function inspect(
     bytes calldata data,
-    AbiType[] calldata abiTypes,
+    AbiType[] calldata typeTree,
     uint256 index
   ) internal pure returns (Payload memory result) {
     /*
-     * The parameter encoding area contains a head region, divided into
-     * 32-byte chunks. Each parameter occupies one chunk in head:
+     * The parameter encoding area consists of a head region, divided into
+     * 32-byte chunks. Each parameter occupies one chunk in the head:
      * - Static parameters are encoded inline.
-     * - Dynamic parameters store an offset pointing to the tail region,
-     *   where the actual encoded data resides. Note the offset is relative
-     *   to the start of each block, and not to the start of the buffer
+     * - Dynamic parameters store an offset pointing to the tail region, where
+     *   the actual encoded data resides.
+     *
+     * Note: The offset is relative to the start of each block, not the start
+     *       of the buffer.
      */
     __block__(
       data,
-      abiTypes[index].key == AbiTypeKey.AbiEncodedWithSelector ? 4 : 0,
-      abiTypes,
+      typeTree[index].key == AbiTypeKey.AbiEncodedWithSelector ? 4 : 0,
+      typeTree,
       index,
-      abiTypes[index].fields.length,
+      typeTree[index].fields.length,
       result
     );
     result.size = data.length;
   }
 
   /**
-   * @dev Walks through a parameter encoding tree and maps their location and
-   * size within calldata.
-   * @param data The encoded transaction data.
-   * @param location The current offset within the calldata buffer.
-   * @param abiTypes TODO
-   * @param index The current node being traversed within the parameter tree.
-   * @param result The location and size of the parameter within calldata.
+   * @dev Walks through a parameter encoding tree and maps their location
+   *      and size within calldata.
+   *
+   * @param data     The encoded transaction data.
+   * @param location The current absolute position within calldata.
+   * @param typeTree Array of ABI type definitions forming the typeTree.
+   * @param index    Index of current typeTree node.
+   * @param result   The output payload containing the parameter's location
+   *                and size in calldata.
    */
   function _walk(
     bytes calldata data,
     uint256 location,
-    AbiType[] calldata abiTypes,
+    AbiType[] calldata typeTree,
     uint256 index,
     Payload memory result
   ) private pure {
-    AbiTypeKey key = abiTypes[index].key;
+    AbiTypeKey key = typeTree[index].key;
 
     if (key == AbiTypeKey.Static) {
       result.size = 32;
     } else if (key == AbiTypeKey.Dynamic) {
-      result.size = 32 + _ceil32(_uint256At(data, location));
+      result.size = 32 + _ceil32(_uintAt(data, location));
     } else if (key == AbiTypeKey.Tuple) {
       __block__(
         data,
         location,
-        abiTypes,
+        typeTree,
         index,
-        abiTypes[index].fields.length,
+        typeTree[index].fields.length,
         result
       );
     } else if (key == AbiTypeKey.Array) {
       __block__(
         data,
         location + 32,
-        abiTypes,
+        typeTree,
         index,
-        _uint256At(data, location),
+        _uintAt(data, location),
         result
       );
       result.size += 32;
@@ -104,37 +97,44 @@ library AbiDecoder {
       __block__(
         data,
         location + 32 + (key == AbiTypeKey.AbiEncodedWithSelector ? 4 : 0),
-        abiTypes,
+        typeTree,
         index,
-        abiTypes[index].fields.length,
+        typeTree[index].fields.length,
         result
       );
-      result.size = 32 + _ceil32(_uint256At(data, location));
+      result.size = 32 + _ceil32(_uintAt(data, location));
     }
     result.index = index;
     result.location = location;
   }
 
   /**
-   * @dev Recursively decodes a block of parameters from transaction data according to a type tree.
-   * @param data The encoded transaction data (calldata for gas efficiency).
-   * @param location The current position in bytes where the parameter block starts.
-   * @param abiTypes The array of parameter definitions forming the type tree.
-   * @param index The index of the current parameter being processed in the params array.
-   * @param result The decoded payload structure where results will be stored.
-   * @notice This function handles two types of blocks:
-   *         1. Array blocks: Length determined by a 32-byte word preceding the data
-   *         2. Struct blocks: Length determined by the number of fields in the parameter
+   * @dev Decodes a structured block of parameters from calldata. Maps
+   *      locations of values within Array or Tuple sections, which both use the
+   *      HEAD+TAIL+OFFSET encoding scheme.
+   *
+   * @param data        The encoded transaction data (in calldata for gas
+   *                    efficiency).
+   * @param location    Starting byte position of the block in calldata.
+   * @param typeTree    Array of ABI type definitions forming the typeTree.
+   * @param index       Index of the current node in the `typeTree`.
+   * @param blockLength Number of elements to process in this block.
+   * @param result      The decoded `Payload`.
+   *
+   * @notice Handles two block types:
+   *         1. Arrays: Length determined by a 32-byte word before the data.
+   *         2. Tuples: Length determined by the number of fields in the type.
    */
+
   function __block__(
     bytes calldata data,
     uint256 location,
-    AbiType[] calldata abiTypes,
+    AbiType[] calldata typeTree,
     uint256 index,
     uint256 blockLength,
     Payload memory result
   ) private pure {
-    AbiType calldata param = abiTypes[index];
+    AbiType calldata param = typeTree[index];
 
     result.children = new Payload[](blockLength);
 
@@ -144,13 +144,13 @@ library AbiDecoder {
       if (i == 0 || param.key != AbiTypeKey.Array) {
         // For structs or the first element of an array, calculate if element inline
         // For array elements after the first, they all have the same inline status
-        isInline = _isInline(abiTypes, param.fields[i]);
+        isInline = _isInline(typeTree, param.fields[i]);
       }
 
       _walk(
         data,
         _locationInBlock(data, location, offset, isInline),
-        abiTypes,
+        typeTree,
         param.fields[param.key == AbiTypeKey.Array ? 0 : i],
         result.children[i]
       );
@@ -167,15 +167,14 @@ library AbiDecoder {
   }
 
   /**
-   * @dev Returns the location of a block chunk, which can be either inline in
-   * the HEAD region or at an offset in the TAIL region.
-   *
-   * @param data The encoded transaction calldata
-   * @param location absolute location, points to the start of HEAD region
-   * @param offset relative offset of the chunk within the HEAD region
-   * @param isInline Whether chunk is encoded inline within HEAD or at the TAIL
-   *
-   * @return The absolute location of the block chunk
+   * @dev Calculates the absolute position of a chunk in calldata.
+   *      For inline parameters, returns the position in the HEAD region.
+   *      For non-inline parameters, follows the offset pointer to TAIL.
+   * @param data The encoded calldata
+   * @param location Base position where the HEAD region begins
+   * @param offset Relative position within the HEAD region
+   * @param isInline Whether the parameter is inline or referenced via offset
+   * @return The absolute position of the parameter in calldata
    */
   function _locationInBlock(
     bytes calldata data,
@@ -186,28 +185,32 @@ library AbiDecoder {
     if (isInline) {
       return location + offset;
     } else {
-      return location + _uint256At(data, location + offset);
+      return location + _uintAt(data, location + offset);
     }
   }
 
   /**
-   * @dev Recursively traverses the ABI parameter tree to check if the parameter
-   * is inline. A parameter is inline if it's either a static type or a tuple
-   * comprised solely of static types. Arrays and dynamic types break the inline
-   * chain.
-   * @param abiTypes Array of ABI parameters.
-   * @param index Index of the parameter to start traversing.
-   * @return bool True if the parameter is inline, false otherwise.
+   * @dev Recursively traverses the ABI typeTree to determine if the
+   *      parameter is inline. A parameter is considered inline if it is
+   *      either a static type or a tuple containing only static types.
+   *      Arrays and dynamic types break the inline chain.
+   *
+   *      Additionally, nested `AbiEncoded*` nodes are always embedded within
+   *      a dynamic placeholder node, making them non-inline as well.
+   *
+   * @param typeTree Array of ABI type definitions forming the typeTree.
+   * @param index    Index of the current node in the typeTree.
+   * @return         `true` if the parameter is inline, `false` otherwise.
    */
   function _isInline(
-    AbiType[] calldata abiTypes,
+    AbiType[] calldata typeTree,
     uint256 index
   ) private pure returns (bool) {
-    AbiType calldata abiType = abiTypes[index];
+    AbiType calldata abiType = typeTree[index];
 
     if (abiType.key == AbiTypeKey.Tuple) {
       for (uint256 i; i < abiType.fields.length; ++i) {
-        if (!_isInline(abiTypes, abiType.fields[i])) {
+        if (!_isInline(typeTree, abiType.fields[i])) {
           return false;
         }
       }
@@ -218,12 +221,9 @@ library AbiDecoder {
   }
 
   /**
-   * @dev Loads a word from calldata.
-   * @param data The calldata to load the word from.
-   * @param location The starting location of the slice.
-   * @return result 32 byte word from calldata.
+   * @dev Loads a word from calldata, casts to uint
    */
-  function _uint256At(
+  function _uintAt(
     bytes calldata data,
     uint256 location
   ) private pure returns (uint256 result) {
@@ -235,6 +235,9 @@ library AbiDecoder {
     }
   }
 
+  /**
+   * @dev Calculates the ceiling of a number to the nearest multiple of 32
+   */
   function _ceil32(uint256 size) private pure returns (uint256) {
     // pad size. Source: http://www.cs.nott.ac.uk/~psarb2/G51MPC/slides/NumberLogic.pdf
     return ((size + 32 - 1) / 32) * 32;

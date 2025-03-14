@@ -1,14 +1,24 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LGPL-3.0
 pragma solidity >=0.8.21;
 
 import "./AbiDecoder.sol";
 
-struct TypedData {
-  AbiType[] abiTypes;
-  bytes32[] typeHashes;
-}
-
+/**
+ * @title EIP712Encoder - Encodes and hashes EIP-712 structured data
+ * @author gnosisguild
+ */
 contract EIP712Encoder {
+  struct TypedData {
+    AbiType[] abiTypes;
+    bytes32[] typeHashes;
+  }
+  /**
+   * @dev Computes the EIP-712 hash of a typed message
+   * @param domain The domain separator data encoded according to EIP-712
+   * @param message The message data encoded according to EIP-712
+   * @param types Type definitions for both domain and message
+   * @return result The EIP-712 hash of the typed message
+   */
   function hashTypedMessage(
     bytes calldata domain,
     bytes calldata message,
@@ -28,6 +38,12 @@ contract EIP712Encoder {
     }
   }
 
+  /**
+   * @dev Computes the EIP-712 hash of only the domain part
+   * @param data The domain separator data encoded according to EIP-712
+   * @param types Type definitions for the domain
+   * @return The hash of the domain separator
+   */
   function hashTypedDomain(
     bytes calldata data,
     TypedData calldata types
@@ -35,6 +51,13 @@ contract EIP712Encoder {
     return __entrypoint(data, types, 0);
   }
 
+  /**
+   * @dev Internal function to start the hashing process for either domain or message
+   * @param data The encoded data to hash
+   * @param types Type definitions
+   * @param index Index in the types array to use (0 for domain, 1 for message)
+   * @return The hash of the specified data
+   */
   function __entrypoint(
     bytes calldata data,
     TypedData calldata types,
@@ -47,6 +70,13 @@ contract EIP712Encoder {
     return _hashBlock(data, types, payload);
   }
 
+  /**
+   * @dev Recursively hashes a structured block of data according to EIP-712
+   * @param data The raw encoded data
+   * @param types Type definitions
+   * @param _block The payload structure describing the block's location and size
+   * @return The hash of the block according to EIP-712
+   */
   function _hashBlock(
     bytes calldata data,
     TypedData calldata types,
@@ -65,6 +95,12 @@ contract EIP712Encoder {
       );
   }
 
+  /**
+   * @dev Hashes a dynamic-length field according to EIP-712
+   * @param data The raw encoded data
+   * @param dynamic The payload structure describing the field's location and size
+   * @return The hash of the dynamic field
+   */
   function _hashDynamic(
     bytes calldata data,
     Payload memory dynamic
@@ -74,6 +110,13 @@ contract EIP712Encoder {
     return keccak256(data[left:left + length]);
   }
 
+  /**
+   * @dev Encodes a single field according to its type and the EIP-712 standard
+   * @param data The raw encoded data
+   * @param types Type definitions
+   * @param field The payload structure describing the field's location and size
+   * @return The encoded field as a bytes32 value
+   */
   function _encodeField(
     bytes calldata data,
     TypedData calldata types,
