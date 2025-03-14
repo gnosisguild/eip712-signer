@@ -23,7 +23,6 @@ contract AbiDecoderMock {
   function copyOut(
     Payload memory output
   ) private pure returns (PP1 memory result) {
-    result._type = output.key;
     result.location = output.location;
     result.size = output.size;
     result.children = new PP2[](output.children.length);
@@ -35,7 +34,6 @@ contract AbiDecoderMock {
   function copyOutTo2(
     Payload memory output
   ) private pure returns (PP2 memory result) {
-    result._type = output.key;
     result.location = output.location;
     result.size = output.size;
     result.children = new PP3[](output.children.length);
@@ -47,7 +45,6 @@ contract AbiDecoderMock {
   function copyOutTo3(
     Payload memory output
   ) private pure returns (PP3 memory result) {
-    result._type = output.key;
     result.location = output.location;
     result.size = output.size;
     result.children = new PP4[](output.children.length);
@@ -59,7 +56,6 @@ contract AbiDecoderMock {
   function copyOutTo4(
     Payload memory output
   ) private pure returns (PP4 memory result) {
-    result._type = output.key;
     result.location = output.location;
     result.size = output.size;
     result.children = new PP5[](output.children.length);
@@ -71,7 +67,6 @@ contract AbiDecoderMock {
   function copyOutTo5(
     Payload memory output
   ) private pure returns (PP5 memory result) {
-    result._type = output.key;
     result.location = output.location;
     result.size = output.size;
     result.children = new PP6[](output.children.length);
@@ -83,7 +78,6 @@ contract AbiDecoderMock {
   function copyOutTo6(
     Payload memory output
   ) private pure returns (PP6 memory result) {
-    result._type = output.key;
     result.location = output.location;
     result.size = output.size;
     if (output.children.length > 0) {
@@ -92,42 +86,36 @@ contract AbiDecoderMock {
   }
 
   struct PP1 {
-    AbiTypeKey _type;
     uint256 location;
     uint256 size;
     PP2[] children;
   }
 
   struct PP2 {
-    AbiTypeKey _type;
     uint256 location;
     uint256 size;
     PP3[] children;
   }
 
   struct PP3 {
-    AbiTypeKey _type;
     uint256 location;
     uint256 size;
     PP4[] children;
   }
 
   struct PP4 {
-    AbiTypeKey _type;
     uint256 location;
     uint256 size;
     PP5[] children;
   }
 
   struct PP5 {
-    AbiTypeKey _type;
     uint256 location;
     uint256 size;
     PP6[] children;
   }
 
   struct PP6 {
-    AbiTypeKey _type;
     uint256 location;
     uint256 size;
   }

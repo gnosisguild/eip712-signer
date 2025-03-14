@@ -17,7 +17,6 @@ struct AbiType {
 }
 
 struct Payload {
-  AbiTypeKey key;
   uint256 index;
   uint256 location;
   uint256 size;
@@ -55,9 +54,6 @@ library AbiDecoder {
       abiTypes[index].fields.length,
       result
     );
-    result.index = 0;
-    result.key = abiTypes[index].key;
-    result.location = 0;
     result.size = data.length;
   }
 
@@ -115,7 +111,6 @@ library AbiDecoder {
       );
       result.size = 32 + _ceil32(_uint256At(data, location));
     }
-    result.key = key;
     result.index = index;
     result.location = location;
   }
