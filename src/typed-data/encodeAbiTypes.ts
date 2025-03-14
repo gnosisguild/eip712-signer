@@ -1,7 +1,7 @@
 import { TypedData, TypedDataDomain } from "abitype";
 import { AbiCoder } from "ethers";
 
-import { toAbiTypes } from "./typed-data";
+import { toAbiTypes } from "./toAbiTypes";
 
 export function encodeAbiTypes({
   domain,

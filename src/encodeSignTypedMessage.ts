@@ -2,8 +2,8 @@ import { TypedData, TypedDataDomain } from "abitype";
 import { Interface, keccak256 } from "ethers";
 
 import Artifact from "../artifacts/contracts/SignTypedMessageLib.sol/SignTypedMessageLib.json";
-import { encodeAbiTypes } from "./encodeAbiTypes";
 import {
+  encodeAbiTypes,
   encodeTypedDomain,
   encodeTypedMessage,
   toAbiTypes,

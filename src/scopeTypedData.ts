@@ -2,8 +2,7 @@ import { TypedData } from "abitype";
 import { AbiCoder, Interface, keccak256 } from "ethers";
 import { Condition, Operator, ParameterType, rolesAbi } from "zodiac-roles-sdk";
 
-import { encodeAbiTypes } from "./encodeAbiTypes";
-import { toAbiTypes } from "./typed-data";
+import { encodeAbiTypes, toAbiTypes } from "./typed-data";
 
 export const scopeTypedData = ({
   domain,
