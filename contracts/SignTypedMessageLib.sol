@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0
-pragma solidity >=0.8.21;
+pragma solidity >=0.8.21 <0.9.0;
 
 import "./SafeStorage.sol";
 import "./EIP712Encoder.sol";
 
-interface ISafe {
-  function domainSeparator() external view returns (bytes32);
-}
-
+/**
+ * @title SignTypedMessageLib - Marks (typed) messages as signed in SafeStorage
+ * @author gnosisguild
+ */
 contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   /// @dev Deployment address of the contract.
   address public immutable deployedAt;
@@ -24,11 +24,12 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   }
 
   /**
-   * @notice Marks a message as signed in storage.
+   * @notice Marks a message as signed
+   * @dev The message hash is marked as approved in SafeStorage
    * @dev Can be verified using EIP-1271 validation method by passing the
-   *      message and empty bytes as the signature, representing an on-chain
-   *      signature.
-   * @param message The message to be signed.
+   *      message and empty bytes as the signature. Empty bytes as signature
+   *      represent an on-chain signature
+   * @param message The message to be signed
    */
   function signMessage(bytes calldata message) external {
     bytes32 safeMessageHash = hashSafeMessage(message);
@@ -38,13 +39,14 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   }
 
   /**
-   * @notice Hashes a typed message input (EIP-712) and marks the hash as signed.
-   * @dev Can be verified using EIP-1271 validation by passing the typed message
-   *      hash as the message and empty bytes as the signature, representing an
-   *      on-chain signature.
-   * @param domain The encoded EIP712 domain
+   * @notice Mark a typed structured message (EIP-712) as signed
+   * @dev The typed message hash is marked as approved in SafeStorage
+   * @dev Can be verified using EIP-1271 validation by passing the typed
+   *      message hash as the message and empty bytes as the signature. Empty
+   *      bytes as signature represent an on-chain signature
+   * @param domain  The encoded EIP712 domain
    * @param message The encoded EIP712 message
-   * @param types The flattened EIP7127 typedData definitions
+   * @param types   The flattened EIP712 typedData definitions
    */
   function signTypedMessage(
     bytes calldata domain,
@@ -52,17 +54,18 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
     TypedData calldata types
   ) public {
     require(address(this) != deployedAt);
-    bytes32 safeMessageHash = hashSafeTypedMessage(domain, message, types);
+    bytes32 safeMessageHash = hashTypedSafeMessage(domain, message, types);
 
     signedMessages[safeMessageHash] = 1;
     emit SignMsg(safeMessageHash);
   }
 
   /**
-   * @notice Produces a SafeMessage hash for a plain message.
-   * @dev Follows Safe's schema for internal signed messages
-   * @param message The message to hash.
-   * @return bytes32 the resulting hash
+   * @notice Packs a message, and produces the SafeMessage hash for it
+   * @dev Follows Safe's internal type schema for signing messages
+   *
+   * @param message  The message to hash
+   * @return bytes32 The resulting hash
    */
   function hashSafeMessage(bytes memory message) public view returns (bytes32) {
     return
@@ -76,14 +79,15 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
   }
 
   /**
-   * @notice Produces a SafeMessage hash for a EIP712 structed message.
-   * @dev Follows Safe's schema for internal signed messages
-   * @param domain The encoded EIP7127 domain part of data to be signed
-   * @param message The encoded EIP7127 message part of data to be signed
-   * @param types The flattened EIP7127 typedData definitions
-   * @return bytes32 the resulting hash
+   * @notice Packs a typed message, and produces the SafeMessage hash for it
+   * @dev Follows Safe's internal type schema for signing messages
+   *
+   * @param domain   The encoded EIP712 domain
+   * @param message  The encoded EIP712 message
+   * @param types    The flattened EIP712 type definitions
+   * @return bytes32 The resulting hash
    */
-  function hashSafeTypedMessage(
+  function hashTypedSafeMessage(
     bytes calldata domain,
     bytes calldata message,
     TypedData calldata types

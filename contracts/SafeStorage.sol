@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity >=0.8.21 <0.9.0;
 
 /**
  * @title SafeStorage - Storage layout of the Safe contracts
@@ -19,4 +19,8 @@ contract SafeStorage {
   bytes32 internal _deprecatedDomainSeparator;
   mapping(bytes32 => uint256) internal signedMessages;
   mapping(address => mapping(bytes32 => uint256)) internal approvedHashes;
+}
+
+interface ISafe {
+  function domainSeparator() external view returns (bytes32);
 }

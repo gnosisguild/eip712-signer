@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0
-pragma solidity >=0.8.17 <0.9.0;
+pragma solidity >=0.8.21 <0.9.0;
 
 import "./AbiDecoderTypes.sol";
 
@@ -20,7 +20,7 @@ library AbiDecoder {
    * @param typeTree Array of ABI type definitions forming the typeTree.
    * @param index    Entrypoint in typeTree.
    * @return result  The mapped location and size of parameters in the encoded
-   *                transaction data.
+   *                 transaction data.
    */
   function inspect(
     bytes calldata data,
@@ -35,7 +35,7 @@ library AbiDecoder {
      *   the actual encoded data resides.
      *
      * Note: The offset is relative to the start of each block, not the start
-     *       of the buffer.
+     * of the buffer.
      */
     __block__(
       data,
@@ -57,7 +57,7 @@ library AbiDecoder {
    * @param typeTree Array of ABI type definitions forming the typeTree.
    * @param index    Index of current typeTree node.
    * @param result   The output payload containing the parameter's location
-   *                and size in calldata.
+   *                 and size in calldata.
    */
   function _walk(
     bytes calldata data,
@@ -122,8 +122,8 @@ library AbiDecoder {
    * @param result      The decoded `Payload`.
    *
    * @notice Handles two block types:
-   *         1. Arrays: Length determined by a 32-byte word before the data.
-   *         2. Tuples: Length determined by the number of fields in the type.
+   *     1. Arrays: Length determined by a 32-byte word before the data.
+   *     2. Tuples: Length determined by the number of fields in the type.
    */
 
   function __block__(
@@ -170,11 +170,12 @@ library AbiDecoder {
    * @dev Calculates the absolute position of a chunk in calldata.
    *      For inline parameters, returns the position in the HEAD region.
    *      For non-inline parameters, follows the offset pointer to TAIL.
-   * @param data The encoded calldata
-   * @param location Base position where the HEAD region begins
-   * @param offset Relative position within the HEAD region
-   * @param isInline Whether the parameter is inline or referenced via offset
-   * @return The absolute position of the parameter in calldata
+   *
+   * @param data     The encoded calldata.
+   * @param location Base position where the HEAD region begins.
+   * @param offset   Relative position within the HEAD region.
+   * @param isInline Whether the parameter is inline or referenced via offset.
+   * @return         The absolute position of the chunk in calldata.
    */
   function _locationInBlock(
     bytes calldata data,

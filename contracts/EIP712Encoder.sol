@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: LGPL-3.0
-pragma solidity >=0.8.21;
+pragma solidity >=0.8.21 <0.9.0;
 
 import "./AbiDecoder.sol";
 
 /**
- * @title EIP712Encoder - Encodes and hashes EIP-712 structured data
+ * @title EIP712Encoder - Encodes and hashes EIP-712 typed structured data
  * @author gnosisguild
  */
 contract EIP712Encoder {

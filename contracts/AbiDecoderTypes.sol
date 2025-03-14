@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0
+pragma solidity >=0.8.21 <0.9.0;
+
 /**
  * @dev Represents the key type for ABI encoding
  */
