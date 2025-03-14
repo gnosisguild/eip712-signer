@@ -12,12 +12,13 @@ contract EIP712Encoder {
     AbiType[] abiTypes;
     bytes32[] typeHashes;
   }
+
   /**
-   * @dev Computes the EIP-712 hash of a typed message
-   * @param domain The domain separator data encoded according to EIP-712
-   * @param message The message data encoded according to EIP-712
-   * @param types Type definitions for both domain and message
-   * @return result The EIP-712 hash of the typed message
+   * @dev Computes the hash of an EIP-712 message.
+   * @param domain  The encoded domain data.
+   * @param message The encoded message data.
+   * @param types   Type definitions for domain and message
+   *                (domain at 0) (message at 0).
    */
   function hashTypedMessage(
     bytes calldata domain,
@@ -25,8 +26,8 @@ contract EIP712Encoder {
     TypedData calldata types
   ) public pure returns (bytes32 result) {
     (bytes32 domainSeparator, bytes32 messageHash) = (
-      __entrypoint(domain, types, 0),
-      __entrypoint(message, types, 1)
+      _inpectAndHashStruct(domain, types, 0),
+      _inpectAndHashStruct(message, types, 1)
     );
 
     assembly {
@@ -39,26 +40,25 @@ contract EIP712Encoder {
   }
 
   /**
-   * @dev Computes the EIP-712 hash of only the domain part
-   * @param data The domain separator data encoded according to EIP-712
-   * @param types Type definitions for the domain
-   * @return The hash of the domain separator
+   * @dev Computes the hash of an EIP-712 domain.
+   * @param data  The encoded domain data.
+   * @param types Type definitions for the domain.
    */
   function hashTypedDomain(
     bytes calldata data,
     TypedData calldata types
   ) public pure returns (bytes32) {
-    return __entrypoint(data, types, 0);
+    return _inpectAndHashStruct(data, types, 0);
   }
 
   /**
-   * @dev Internal function to start the hashing process for either domain or message
-   * @param data The encoded data to hash
-   * @param types Type definitions
-   * @param index Index in the types array to use (0 for domain, 1 for message)
-   * @return The hash of the specified data
+   * @dev Struct hashing entrypoint.
+   *
+   * @param data  Encoded structure data.
+   * @param types Type definitions.
+   * @param index Type definition entrypoint.
    */
-  function __entrypoint(
+  function _inpectAndHashStruct(
     bytes calldata data,
     TypedData calldata types,
     uint256 index
@@ -71,11 +71,11 @@ contract EIP712Encoder {
   }
 
   /**
-   * @dev Recursively hashes a structured block of data according to EIP-712
-   * @param data The raw encoded data
-   * @param types Type definitions
-   * @param _block The payload structure describing the block's location and size
-   * @return The hash of the block according to EIP-712
+   * @dev Hashes a Tuple or Array block.
+   *
+   * @param data   Encoded input data.
+   * @param types  Type definitions.
+   * @param _block The block's location and size in calldata.
    */
   function _hashBlock(
     bytes calldata data,
@@ -96,10 +96,9 @@ contract EIP712Encoder {
   }
 
   /**
-   * @dev Hashes a dynamic-length field according to EIP-712
-   * @param data The raw encoded data
-   * @param dynamic The payload structure describing the field's location and size
-   * @return The hash of the dynamic field
+   * @dev Hashes Dynamic field
+   * @param data   Encoded input data.
+   * @param dynamic The field's location and size in calldata.
    */
   function _hashDynamic(
     bytes calldata data,
@@ -111,11 +110,10 @@ contract EIP712Encoder {
   }
 
   /**
-   * @dev Encodes a single field according to its type and the EIP-712 standard
-   * @param data The raw encoded data
+   * @dev Encodes (Static) or hashes (Dynamic, Block) a field
+   * @param data  Encoded input data.
    * @param types Type definitions
-   * @param field The payload structure describing the field's location and size
-   * @return The encoded field as a bytes32 value
+   * @param field The field's location and size in calldata.
    */
   function _encodeField(
     bytes calldata data,
