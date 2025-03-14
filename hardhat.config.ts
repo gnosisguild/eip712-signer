@@ -1,13 +1,14 @@
 import "@nomicfoundation/hardhat-toolbox";
 import dotenv from "dotenv";
+import "hardhat-contract-sizer";
+import "hardhat-gas-reporter";
+// import "hardhat-gas-reporter";
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
 
-import "./tasks/accounts";
-import "./tasks/deploy";
-
 dotenv.config();
-const { INFURA_KEY, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, MNEMONIC } = process.env;
+const { INFURA_KEY, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, MNEMONIC } =
+  process.env;
 
 const chainIds = {
   hardhat: 31337,
@@ -49,12 +50,12 @@ const config: HardhatUserConfig = {
     currency: "USD",
     enabled: process.env.REPORT_GAS ? true : false,
     excludeContracts: [],
-    src: "./contracts",
   },
   networks: {
     hardhat: {
       accounts: {
-        mnemonic: "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat",
+        mnemonic:
+          "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat",
       },
       chainId: chainIds.hardhat,
     },
@@ -69,9 +70,9 @@ const config: HardhatUserConfig = {
     tests: "./test",
   },
   solidity: {
-    version: "0.8.21",
+    version: "0.8.28",
     settings: {
-      evmVersion: "shanghai",
+      // evmVersion: "shanghai",
       optimizer: {
         enabled: true,
         runs: 100,

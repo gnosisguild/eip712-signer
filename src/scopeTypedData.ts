@@ -1,81 +1,95 @@
-import { ParamType } from "ethers";
-import { TypedData } from "viem";
-import { Condition, Operator, ParameterType, c } from "zodiac-roles-sdk";
+import { TypedData } from "abitype";
+import { AbiCoder, Interface, keccak256 } from "ethers";
+import { Condition, Operator, ParameterType, rolesAbi } from "zodiac-roles-sdk";
 
-/**
- * Maps over a condition structure formulated to scope the typed data object,
- * turning it into a condition structure scoping the recursively ABI encoded value as sent to the contract.
- * Once the contract can decode directly from calldata, we should be able to send the original conditions structure so this function will be obsolete.
- **/
+import { encodeAbiTypes, toAbiTypes } from "./typed-data";
+
 export const scopeTypedData = ({
-  condition,
+  domain,
+  message,
   types,
-  type,
-  scopeSignature,
 }: {
-  condition: Condition;
+  domain: Condition;
+  message: Condition;
   types: TypedData;
-  type: string;
-  /** Controls whether the top-level struct type signature shall be scoped or not */
-  scopeSignature?: boolean;
-}): Condition => {
-  // carry through logical conditions
-  if (condition.paramType === ParameterType.None) {
-    return {
-      ...condition,
-      children: condition.children?.map((child) =>
-        scopeTypedData({ condition: child, types, type: type, scopeSignature }),
-      ),
-    };
+}): { selector: `0x${string}`; condition: Condition } => {
+  if (domain.paramType !== ParameterType.AbiEncoded) {
+    throw new Error("Domain not AbiEncoded condition");
   }
 
-  // array
-  const isArray = type.includes("[");
-  if (isArray) {
-    if (condition.paramType !== ParameterType.Array) {
-      throw new Error(`Expected Array condition for type ${type}`);
-    }
-    if (
-      ![Operator.ArrayEvery, Operator.ArraySome, Operator.ArraySubset, Operator.Matches].includes(condition.operator)
-    ) {
-      throw new Error(`Only supporting ArrayEvery, ArraySome, ArraySubset, Matches operators for array types`);
-    }
+  if (message.paramType !== ParameterType.AbiEncoded) {
+    throw new Error("Message not AbiEncoded condition");
+  }
 
-    const elementType = type.split("[")[0];
-    return c.abiEncodedMatches(
-      [
+  if (!types["EIP712Domain"]) {
+    throw new Error("TypedData does not include EIP712Domain");
+  }
+
+  const selector = keccak256(encodeAbiTypes({ types })).slice(0, 10);
+  return {
+    selector: selector as `0x${string}`,
+    condition: {
+      paramType: ParameterType.Calldata,
+      operator: Operator.Matches,
+      children: [domain, message, typesCondition(types)],
+    },
+  };
+};
+
+function typesCondition(types: TypedData): Condition {
+  const { abiTypes, typeHashes } = toAbiTypes({ types });
+  const compValue = AbiCoder.defaultAbiCoder().encode(
+    ["tuple(tuple(uint8,uint256[])[], bytes32[])"],
+    [[abiTypes.map((p) => [p.key, p.fields]), typeHashes]],
+  );
+
+  return {
+    paramType: ParameterType.Tuple,
+    operator: Operator.EqualTo,
+    compValue: compValue as any,
+    children: [tupleLeft(), tupleRight()],
+  };
+}
+
+const tupleLeft = (): Condition => ({
+  paramType: ParameterType.Array,
+  operator: Operator.Pass,
+  compValue: "0x",
+  children: [
+    {
+      paramType: ParameterType.Tuple,
+      operator: Operator.Pass,
+      children: [
         {
-          ...condition,
-          children: condition.children?.map((child) => scopeTypedData({ condition: child, types, type: elementType })),
+          paramType: ParameterType.Static,
+          operator: Operator.Pass,
+        },
+        {
+          paramType: ParameterType.Array,
+          operator: Operator.Pass,
+          children: [
+            {
+              paramType: ParameterType.Static,
+              operator: Operator.Pass,
+            },
+          ],
         },
       ],
-      ["bytes[]"],
-    )(ParamType.from("bytes"));
-  }
+    },
+  ],
+});
 
-  // struct
-  const isStruct = type in types;
-  if (isStruct) {
-    if (condition.paramType !== ParameterType.Tuple) {
-      throw new Error(`Expected Tuple condition for type ${type}`);
-    }
-    if (condition.operator !== Operator.Matches) {
-      throw new Error(`Only supporting Matches operator for struct types`);
-    }
+const tupleRight = (): Condition => ({
+  paramType: ParameterType.Array,
+  operator: Operator.Pass,
+  compValue: "0x",
+  children: [
+    {
+      paramType: ParameterType.Static,
+      operator: Operator.Pass,
+      compValue: "0x",
+    },
+  ],
+});
 
-    const structFields = types[type];
-    return c.abiEncodedMatches(
-      [
-        structFields.map(({ type }, index) =>
-          condition.children && !!condition.children[index]
-            ? scopeTypedData({ condition: condition.children[index], types, type })
-            : undefined,
-        ),
-      ],
-      ["bytes[]"],
-    )(ParamType.from("bytes"));
-  }
-
-  // basic types
-  return c.abiEncodedMatches([condition], [type])(ParamType.from("bytes"));
-};
+export const iface = Interface.from(rolesAbi);
