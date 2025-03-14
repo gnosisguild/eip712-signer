@@ -66,7 +66,8 @@ contract SignTypedMessageLib is SafeStorage, EIP712Encoder {
     bytes calldata message,
     TypedData calldata types
   ) public view returns (bytes32) {
-    return hashSafeMessage(abi.encode(hashTypedData(domain, message, types)));
+    return
+      hashSafeMessage(abi.encode(hashTypedMessage(domain, message, types)));
   }
 
   /**

@@ -9,7 +9,7 @@ struct TypedData {
 }
 
 contract EIP712Encoder {
-  function hashTypedData(
+  function hashTypedMessage(
     bytes calldata domain,
     bytes calldata message,
     TypedData calldata types
@@ -28,7 +28,7 @@ contract EIP712Encoder {
     }
   }
 
-  function hashStruct(
+  function hashTypedDomain(
     bytes calldata data,
     TypedData calldata types
   ) public pure returns (bytes32) {

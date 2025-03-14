@@ -27,7 +27,7 @@ export async function compareToEthersHashing({
   const _message = encodeTypedMessage({ types, message });
   const abiTypes = toAbiTypes({ domain, types });
 
-  expect(await encoder.hashTypedData(_domain, _message, abiTypes)).to.equal(
+  expect(await encoder.hashTypedMessage(_domain, _message, abiTypes)).to.equal(
     TypedDataEncoder.hash(domain, types as any, message),
   );
 }

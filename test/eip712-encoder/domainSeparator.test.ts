@@ -20,7 +20,7 @@ describe("EIP712Encoder", () => {
       };
 
       expect(
-        await encoder.hashStruct(
+        await encoder.hashTypedDomain(
           encodeTypedDomain({ domain }),
           toAbiTypes({ domain }),
         ),
@@ -38,7 +38,7 @@ describe("EIP712Encoder", () => {
       };
 
       expect(
-        await encoder.hashStruct(
+        await encoder.hashTypedDomain(
           encodeTypedDomain({ domain }),
           toAbiTypes({ domain }),
         ),
