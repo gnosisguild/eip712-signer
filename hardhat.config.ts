@@ -47,11 +47,9 @@ const config: HardhatUserConfig = {
     },
   },
   gasReporter: {
-    //currency: "USD",
-    //enabled: process.env.REPORT_GAS ? true : false,
-    enabled: true,
-    //excludeContracts: [],
-    //src: "./contracts",
+    currency: "USD",
+    enabled: process.env.REPORT_GAS ? true : false,
+    excludeContracts: [],
   },
   networks: {
     hardhat: {
